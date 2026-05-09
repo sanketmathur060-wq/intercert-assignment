@@ -1,0 +1,96 @@
+services:
+
+  postgres-ms:
+    image: postgres:16
+    container_name: postgres-ms
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_ms_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
+
+  redis-ms:
+    image: redis
+    container_name: redis-ms
+
+    ports:
+      - "6380:6379"
+
+  zookeeper-ms:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper-ms
+
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+    ports:
+      - "2182:2181"
+
+  kafka-ms:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka-ms
+
+    depends_on:
+      - zookeeper-ms
+
+    ports:
+      - "9093:9092"
+
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-ms:2181
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-ms:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  auth-service:
+    build:
+      context: ./auth-service
+
+    container_name: auth-service-ms
+
+    depends_on:
+      - postgres-ms
+      - redis-ms
+      - kafka-ms
+
+    env_file:
+      - ./auth-service/.env.docker
+
+    environment:
+      ENV_FILE: .env.docker
+
+    ports:
+      - "3000:3000"
+
+  user-service:
+    build:
+      context: ./user-service
+
+    container_name: user-service-ms
+
+    depends_on:
+      - postgres-ms
+      - redis-ms
+      - kafka-ms
+
+    env_file:
+      - ./user-service/.env.docker
+
+    environment:
+      ENV_FILE: .env.docker
+
+    ports:
+      - "3001:3001"
+
+volumes:
+  postgres_ms_data:
