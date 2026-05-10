@@ -27,14 +27,6 @@ import {
 } from '@nestjs/microservices';
 
 import {
-  CACHE_MANAGER,
-} from '@nestjs/cache-manager';
-
-import type {
-  Cache,
-} from 'cache-manager';
-
-import {
   User,
 } from '../users/entities/user.entity';
 
@@ -51,10 +43,6 @@ implements OnModuleInit {
     @InjectRepository(User)
     private userRepo:
       Repository<User>,
-
-    @Inject(CACHE_MANAGER)
-    private cacheManager:
-      Cache,
 
     private redisService:
       RedisService,

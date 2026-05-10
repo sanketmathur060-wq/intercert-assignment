@@ -12,11 +12,6 @@ import {
  Strategy,
 } from 'passport-jwt';
 
-import {
- CACHE_MANAGER,
-} from '@nestjs/cache-manager';
-
-import type { Cache } from 'cache-manager';
 import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
@@ -25,8 +20,6 @@ export class JwtStrategy
 
  constructor(
 
-   @Inject(CACHE_MANAGER)
-   private cacheManager: Cache,
    private redisService: RedisService,
  ) {
 

@@ -1,47 +1,108 @@
-import { Injectable }
-    from '@nestjs/common';
+import {
+  Injectable,
+} from '@nestjs/common';
 
 import Redis
-    from 'ioredis';
+  from 'ioredis';
 
 @Injectable()
 export class RedisService {
 
-    private redis: Redis;
+  private redis:
+    Redis;
 
-    constructor() {
+  constructor() {
 
-        this.redis =
-            new Redis({
-                host:
-                    process.env
-                        .REDIS_HOST,
-
-                port:
-                    Number(
-                        process.env
-                            .REDIS_PORT,
-                    ),
-            });
-    }
-
-    async set(
-        key: string,
-        value: string,
+    // Railway Production
+    if (
+      process.env.NODE_ENV ===
+      'production' &&
+      process.env.REDIS_URL
     ) {
 
-        return this.redis.set(
-            key,
-            value,
+      console.log(
+        'Using Railway Redis',
+      );
+
+      this.redis =
+        new Redis(
+          process.env
+            .REDIS_URL,
         );
     }
 
-    async get(
-        key: string,
-    ) {
+    // Local Docker
+    else {
 
-        return this.redis.get(
-            key,
-        );
+      console.log(
+        'Using Local Redis',
+      );
+
+      this.redis =
+        new Redis({
+
+          host:
+            process.env
+              .REDIS_HOST,
+
+          port:
+            Number(
+              process.env
+                .REDIS_PORT,
+            ),
+
+          username:
+            process.env
+              .REDIS_USERNAME ||
+            'default',
+
+          password:
+            process.env
+              .REDIS_PASSWORD,
+        });
     }
+
+    this.redis.on(
+      'connect',
+      () => {
+
+        console.log(
+          'Redis Connected',
+        );
+      },
+    );
+
+    this.redis.on(
+      'error',
+      (
+        err,
+      ) => {
+
+        console.error(
+          'Redis Error:',
+          err.message,
+        );
+      },
+    );
+  }
+
+  async set(
+    key: string,
+    value: string,
+  ) {
+
+    return this.redis.set(
+      key,
+      value,
+    );
+  }
+
+  async get(
+    key: string,
+  ) {
+
+    return this.redis.get(
+      key,
+    );
+  }
 }
