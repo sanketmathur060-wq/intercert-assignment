@@ -83,12 +83,19 @@ bootstrap() {
       },
     });
 
-  await app
-    .startAllMicroservices();
+  try {
+    await app
+      .startAllMicroservices();
 
-  console.log(
-    'Kafka Consumer Connected',
-  );
+    console.log(
+      'Kafka Consumer Connected',
+    );
+  } catch (err) {
+    console.error(
+      'Kafka Consumer failed to connect — HTTP server will still start:',
+      err.message,
+    );
+  }
 
   await app.listen(
     port,
