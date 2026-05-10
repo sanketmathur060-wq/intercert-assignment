@@ -64,52 +64,58 @@ console.log({
     config.get('KAFKA_PASSWORD')?.length,
 });
   // KAFKA CONSUMER
-  app.connectMicroservice
-    <MicroserviceOptions>({
-      transport:
-        Transport.KAFKA,
+  app.connectMicroservice<
+  MicroserviceOptions
+>({
+  transport:
+    Transport.KAFKA,
 
-      options: {
+  options: {
 
-        client: {
+    client: {
 
-          clientId:
-            'user-service',
+      clientId:
+        'user-service',
 
-          brokers: [
-            config.get<string>(
-              'KAFKA_BROKER',
-            )!,
-          ],
+      brokers: [
+        config.get<string>(
+          'KAFKA_BROKER',
+        )!,
+      ],
 
-          ssl:
-            false,
+      ssl: false,
 
-          sasl: {
+      sasl:
+        config.get(
+          'KAFKA_USERNAME',
+        ) &&
+        config.get(
+          'KAFKA_PASSWORD',
+        )
+          ? {
+              mechanism:
+                'plain',
 
-            mechanism:
-              'plain',
+              username:
+                config.get<string>(
+                  'KAFKA_USERNAME',
+                )!,
 
-            username:
-              config.get<string>(
-                'KAFKA_USERNAME',
-              )!,
+              password:
+                config.get<string>(
+                  'KAFKA_PASSWORD',
+                )!,
+            }
+          : undefined,
+    },
 
-            password:
-              config.get<string>(
-                'KAFKA_PASSWORD',
-              )!,
-          },
-        },
+    consumer: {
 
-        consumer: {
-
-          groupId:
-            'user-consumer',
-        },
-      },
-    });
-
+      groupId:
+        'user-consumer',
+    },
+  },
+});
   await app
     .startAllMicroservices();
 
