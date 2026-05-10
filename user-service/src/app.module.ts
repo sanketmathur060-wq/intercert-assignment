@@ -11,9 +11,8 @@ import {
 } from '@nestjs/typeorm';
 
 import {
-  ClientsModule,
-  Transport,
-} from '@nestjs/microservices';
+  KafkaConsumerService,
+} from './kafka/kafka.consumer';
 
 import {
   PassportModule,
@@ -43,9 +42,6 @@ import {
   join,
 } from 'path';
 
-import {
-  KafkaController,
-} from './kafka/kafka.controller';
 
 import {
   HealthController,
@@ -264,108 +260,6 @@ CacheModule.registerAsync({
   },
 }),
 
-    ClientsModule.registerAsync([
-  {
-    name:
-      'KAFKA_SERVICE',
-
-    inject: [
-      ConfigService,
-    ],
-
-    useFactory:
-      (
-        config:
-          ConfigService,
-      ) => {
-
-        const broker =
-          config.get<string>(
-            'KAFKA_BROKER',
-          ) ||
-          'kafka-ms:9092';
-
-        const username =
-          config.get<string>(
-            'KAFKA_USERNAME',
-          ) || '';
-
-        const password =
-          config.get<string>(
-            'KAFKA_PASSWORD',
-          ) || '';
-
-        const isRailway =
-          !!username &&
-          !!password;
-
-        console.log({
-          broker,
-          username,
-          passwordLength:
-            password?.length,
-        });
-
-        return {
-
-          transport:
-            Transport.KAFKA,
-
-          options: {
-
-            client: {
-
-              clientId:
-                'user-service',
-
-              brokers: [
-                broker,
-              ],
-
-              ssl: false,
-
-              sasl:
-                isRailway
-                  ? {
-                      mechanism:
-                        'plain',
-
-                      username,
-                      password,
-                    }
-                  : undefined,
-
-              retry: {
-                retries:
-                  8,
-              },
-            },
-
-            consumer: {
-
-              groupId:
-                'user-service-group',
-
-              allowAutoTopicCreation:
-                true,
-            },
-
-            subscribe: {
-              fromBeginning:
-                false,
-            },
-
-            producer: {
-
-              allowAutoTopicCreation:
-                true,
-            },
-          },
-        };
-      },
-  },
-]),
-
     PassportModule,
 
     JwtModule
@@ -411,13 +305,13 @@ CacheModule.registerAsync({
   ],
 
   controllers: [
-    KafkaController,
     HealthController,
   ],
 
   providers: [
     JwtStrategy,
     RedisService,
+    KafkaConsumerService,
   ],
 })
 
