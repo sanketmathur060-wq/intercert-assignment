@@ -270,9 +270,65 @@ ClientsModule.registerAsync([
           'KAFKA_PASSWORD',
         );
 
-      const isRailwayKafka =
+      const isRailway =
         !!username &&
         !!password;
+
+      const kafkaOptions: any = {
+
+        transport:
+          Transport.KAFKA,
+
+        options: {
+
+          client: {
+
+            clientId:
+              'auth-service',
+
+            brokers: [
+              broker,
+            ],
+
+            retry: {
+              retries: 8,
+            },
+          },
+
+          consumer: {
+
+            groupId:
+              'auth-service-group',
+          },
+
+          producerOnlyMode:
+            true,
+        },
+      };
+
+      // Railway only
+      if (
+        isRailway
+      ) {
+
+        kafkaOptions
+          .options
+          .client
+          .ssl = false;
+
+        kafkaOptions
+          .options
+          .client
+          .sasl = {
+
+          mechanism:
+            'plain',
+
+          username,
+
+          password,
+        };
+      }
 
       console.log(
         'Kafka Broker:',
@@ -280,84 +336,11 @@ ClientsModule.registerAsync([
       );
 
       console.log(
-        'Kafka Auth:',
-        isRailwayKafka
-          ? 'Railway SASL'
-          : 'Local Docker',
+        'Producer Only:',
+        true,
       );
 
-      const kafkaClient: any = {
-
-        clientId:
-          'auth-service',
-
-        brokers: [
-          broker,
-        ],
-
-        retry: {
-          retries: 10,
-        },
-
-        connectionTimeout:
-          30000,
-
-        authenticationTimeout:
-          30000,
-      };
-
-      // Railway Kafka
-      if (
-        isRailwayKafka
-      ) {
-
-        kafkaClient.ssl =
-          false;
-
-        kafkaClient.sasl =
-          {
-            mechanism:
-              'plain',
-
-            username,
-
-            password,
-          };
-      }
-
-      return {
-
-        transport:
-          Transport.KAFKA,
-
-        options: {
-
-          client:
-            kafkaClient,
-
-          consumer: {
-
-            groupId:
-              isRailwayKafka
-                ? `auth-service-${Date.now()}`
-                : 'auth-service-local',
-
-            sessionTimeout:
-              30000,
-
-            heartbeatInterval:
-              3000,
-
-            allowAutoTopicCreation:
-              true,
-          },
-
-          producer: {
-            allowAutoTopicCreation:
-              true,
-          },
-        },
-      };
+      return kafkaOptions;
     },
   },
 ]),
