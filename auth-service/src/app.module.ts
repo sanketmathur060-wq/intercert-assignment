@@ -12,9 +12,8 @@ import {
 } from '@nestjs/typeorm';
 
 import {
-  ClientsModule,
-  Transport,
-} from '@nestjs/microservices';
+  KafkaService,
+} from './kafka/kafka.service';
 
 import {
   CacheModule,
@@ -243,108 +242,6 @@ import {
       },
     }),
 
-    // KAFKA
-ClientsModule.registerAsync([
-  {
-    name: 'KAFKA_SERVICE',
-
-    inject: [ConfigService],
-
-    useFactory: (
-      config: ConfigService,
-    ) => {
-
-      const broker =
-        config.get<string>(
-          'KAFKA_BROKER',
-        ) ||
-        'kafka-ms:9092';
-
-      const username =
-        config.get<string>(
-          'KAFKA_USERNAME',
-        );
-
-      const password =
-        config.get<string>(
-          'KAFKA_PASSWORD',
-        );
-
-      const isRailway =
-        !!username &&
-        !!password;
-
-      const kafkaOptions: any = {
-
-        transport:
-          Transport.KAFKA,
-
-        options: {
-
-          client: {
-
-            clientId:
-              'auth-service',
-
-            brokers: [
-              broker,
-            ],
-
-            retry: {
-              retries: 8,
-            },
-          },
-
-          consumer: {
-
-            groupId:
-              'auth-service-group',
-          },
-
-          producerOnlyMode:
-            true,
-        },
-      };
-
-      // Railway only
-      if (
-        isRailway
-      ) {
-
-        kafkaOptions
-          .options
-          .client
-          .ssl = false;
-
-        kafkaOptions
-          .options
-          .client
-          .sasl = {
-
-          mechanism:
-            'plain',
-
-          username,
-
-          password,
-        };
-      }
-
-      console.log(
-        'Kafka Broker:',
-        broker,
-      );
-
-      console.log(
-        'Producer Only:',
-        true,
-      );
-
-      return kafkaOptions;
-    },
-  },
-]),
-
     ThrottlerModule
       .forRoot([
         {
@@ -395,6 +292,7 @@ ClientsModule.registerAsync([
   ],
 
   providers: [
+    KafkaService,
     {
       provide:
         APP_GUARD,

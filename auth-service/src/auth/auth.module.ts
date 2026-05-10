@@ -1,138 +1,103 @@
 import {
- Module,
+  Module,
 } from '@nestjs/common';
 
 import {
- JwtModule,
+  JwtModule,
 } from '@nestjs/jwt';
 
 import {
- PassportModule,
+  PassportModule,
 } from '@nestjs/passport';
 
 import {
- TypeOrmModule,
+  TypeOrmModule,
 } from '@nestjs/typeorm';
 
 import {
- ClientsModule,
- Transport,
-} from '@nestjs/microservices';
-
-import {
- ConfigModule,
- ConfigService,
+  ConfigModule,
+  ConfigService,
 } from '@nestjs/config';
 
 import {
- AuthController,
+  AuthController,
 } from './auth.controller';
 
 import {
- AuthService,
+  AuthService,
 } from './auth.service';
 
 import {
- JwtStrategy,
+  JwtStrategy,
 } from './strategies/jwt.strategy';
 
 import {
- User,
+  User,
 } from '../users/entities/user.entity';
 
 import {
- RedisService,
+  RedisService,
 } from '../redis/redis.service';
 
+import {
+  KafkaService,
+} from '../kafka/kafka.service';
+
 @Module({
- imports: [
+  imports: [
 
-   TypeOrmModule.forFeature([
-     User,
-   ]),
+    TypeOrmModule
+      .forFeature([
+        User,
+      ]),
 
-   PassportModule,
+    PassportModule,
 
-   ClientsModule.registerAsync([
-     {
-       name:
-       'KAFKA_SERVICE',
+    JwtModule
+      .registerAsync({
 
-       imports: [
-         ConfigModule,
-       ],
+        imports: [
+          ConfigModule,
+        ],
 
-       inject: [
-         ConfigService,
-       ],
+        inject: [
+          ConfigService,
+        ],
 
-       useFactory:
-       (
-         config:
-         ConfigService,
-       ) => ({
+        useFactory:
+          (
+            config:
+              ConfigService,
+          ) => ({
 
-         transport:
-         Transport.KAFKA,
+            secret:
+              config.get<string>(
+                'JWT_SECRET',
+              )!,
 
-         options: {
-           client: {
-             brokers: [
-               config.get<string>(
-                 'KAFKA_BROKER',
-               )!,
-             ],
-           },
+            signOptions: {
+              expiresIn:
+                '1d',
+            },
+          }),
+      }),
+  ],
 
-           consumer: {
-             groupId:
-             'auth-consumer',
-           },
-         },
-       }),
-     },
-   ]),
+  controllers: [
+    AuthController,
+  ],
 
-   JwtModule.registerAsync({
-     imports: [
-       ConfigModule,
-     ],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    RedisService,
+    KafkaService,
+  ],
 
-     inject: [
-       ConfigService,
-     ],
-
-     useFactory:
-     (
-       config:
-       ConfigService,
-     ) => ({
-
-       secret:
-       config.get<string>(
-         'JWT_SECRET',
-       )!,
-
-       signOptions: {
-         expiresIn:
-         '1d',
-       },
-     }),
-   }),
- ],
-
- controllers: [
-   AuthController,
- ],
-
- providers: [
-   AuthService,
-   JwtStrategy,
-   RedisService,
- ],
-
- exports: [
-   JwtStrategy,
- ],
+  exports: [
+    JwtStrategy,
+    KafkaService,
+  ],
 })
+
 export class AuthModule {}
