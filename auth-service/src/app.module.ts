@@ -20,10 +20,6 @@ import {
 } from '@nestjs/cache-manager';
 
 import {
-  redisStore,
-} from 'cache-manager-ioredis-yet';
-
-import {
   JwtModule,
 } from '@nestjs/jwt';
 
@@ -65,6 +61,7 @@ import {
         true,
     }),
 
+    // DATABASE
     TypeOrmModule
       .forRootAsync({
 
@@ -165,90 +162,75 @@ import {
           },
       }),
 
-    // Redis Optional
-    ...(
-      process.env
-        .REDIS_HOST
-        ? [
-            CacheModule
-              .registerAsync({
-                isGlobal:
-                  true,
+    // CACHE MODULE
+    CacheModule.register({
+      isGlobal:
+        true,
+    }),
 
-                inject: [
-                  ConfigService,
-                ],
+    // KAFKA
+    ClientsModule
+      .registerAsync([
+        {
+          name:
+            'KAFKA_SERVICE',
 
-                useFactory:
-                  async (
-                    config:
-                      ConfigService,
-                  ) => ({
+          inject: [
+            ConfigService,
+          ],
 
-                    store:
-                      await redisStore({
-                        host:
-                          config.get<string>(
-                            'REDIS_HOST',
-                          )!,
+          useFactory:
+            (
+              config:
+                ConfigService,
+            ) => {
 
-                        port:
-                          Number(
-                            config.get(
-                              'REDIS_PORT',
-                            ),
-                          ),
-                      }),
-                  }),
-              }),
-          ]
-        : []
-    ),
+              const broker =
+                config.get<string>(
+                  'KAFKA_BROKER',
+                );
 
-    // Kafka Optional
-    ...(
-      process.env
-        .KAFKA_BROKER
-        ? [
-            ClientsModule
-              .registerAsync([
-                {
-                  name:
-                    'KAFKA_SERVICE',
+              // Railway
+              if (
+                !broker
+              ) {
 
-                  inject: [
-                    ConfigService,
-                  ],
+                console.log(
+                  'Kafka disabled',
+                );
 
-                  useFactory:
-                    (
-                      config:
-                        ConfigService,
-                    ) => ({
+                return {
+                  transport:
+                    Transport.TCP,
+                };
+              }
 
-                      transport:
-                        Transport.KAFKA,
+              console.log(
+                'Kafka Broker:',
+                broker,
+              );
 
-                      options: {
-                        client: {
-                          brokers: [
-                            config.get<string>(
-                              'KAFKA_BROKER',
-                            )!,
-                          ],
-                        },
+              return {
 
-                        consumer: {
-                          groupId:
-                            'auth-consumer',
-                        },
-                      },
-                    }),
+                transport:
+                  Transport.KAFKA,
+
+                options: {
+                  client: {
+                    brokers: [
+                      broker,
+                    ],
+                  },
+
+                  consumer: {
+                    groupId:
+                      'auth-consumer',
+                  },
                 },
-              ]),
-          ]
-        : []
-    ),
+              };
+            },
+        },
+      ]),
 
     ThrottlerModule
       .forRoot([

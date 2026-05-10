@@ -1,216 +1,321 @@
 import {
- Injectable,
- BadRequestException,
- UnauthorizedException,
-} from '@nestjs/common';
-
-import { InjectRepository }
-from '@nestjs/typeorm';
-
-import { Repository }
-from 'typeorm';
-
-import * as bcrypt from 'bcrypt';
-
-import { JwtService }
-from '@nestjs/jwt';
-
-import { User }
-from '../users/entities/user.entity';
-import {
- Inject,
- OnModuleInit,
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
+  Inject,
+  OnModuleInit,
+  Optional,
 } from '@nestjs/common';
 
 import {
- ClientKafka,
+  InjectRepository,
+} from '@nestjs/typeorm';
+
+import {
+  Repository,
+} from 'typeorm';
+
+import * as bcrypt
+from 'bcrypt';
+
+import {
+  JwtService,
+} from '@nestjs/jwt';
+
+import {
+  ClientKafka,
 } from '@nestjs/microservices';
+
 import {
- CACHE_MANAGER,
+  CACHE_MANAGER,
 } from '@nestjs/cache-manager';
 
-import type { Cache }
-from 'cache-manager';
-import { RedisService }
-from '../redis/redis.service';
+import type {
+  Cache,
+} from 'cache-manager';
+
+import {
+  User,
+} from '../users/entities/user.entity';
+
+import {
+  RedisService,
+} from '../redis/redis.service';
 
 @Injectable()
-export class AuthService 
+export class AuthService
 implements OnModuleInit {
 
- constructor(
+  constructor(
 
-   @InjectRepository(User)
-   private userRepo: Repository<User>,
-   @Inject(CACHE_MANAGER)
-   private cacheManager: Cache,
-   private redisService: RedisService,
+    @InjectRepository(User)
+    private userRepo:
+      Repository<User>,
 
-   private jwtService: JwtService,
-   @Inject('KAFKA_SERVICE')
-   private kafkaClient: ClientKafka,
- ) {}
- async onModuleInit() {
+    @Inject(CACHE_MANAGER)
+    private cacheManager:
+      Cache,
 
- await this.kafkaClient.connect();
-}
+    private redisService:
+      RedisService,
 
- async register(dto: any) {
+    private jwtService:
+      JwtService,
 
- const existingUser =
-   await this.userRepo.findOne({
-     where: {
-       email: dto.email,
-     },
-   });
+    @Optional()
+    @Inject(
+      'KAFKA_SERVICE',
+    )
+    private kafkaClient?:
+      ClientKafka,
+  ) {}
 
- if (existingUser) {
-   throw new BadRequestException(
-     'Email already exists',
-   );
- }
+  async onModuleInit() {
 
- const hashedPassword =
-   await bcrypt.hash(
-     dto.password,
-     10,
-   );
+    // Only connect Kafka if available
+    if (
+      this.kafkaClient
+    ) {
 
- const user =
-   this.userRepo.create({
-     ...dto,
-     password: hashedPassword,
-   });
+      try {
 
- const savedUsers = await this.userRepo.save(user);
-const savedUser = Array.isArray(savedUsers) ? savedUsers[0] : savedUsers;
+        await this
+          .kafkaClient
+          .connect();
 
- await this.kafkaClient.emit(
-   'user-created',
+        console.log(
+          'Kafka connected',
+        );
 
-   JSON.stringify({
-     id: savedUser.id,
-     name: savedUser.name,
-     email: savedUser.email,
-     phone: savedUser.phone,
-   }),
- );
+      } catch (
+        error
+      ) {
 
- return {
-   message:
-   'User registered successfully',
- };
-}
+        console.log(
+          'Kafka unavailable',
+        );
+      }
+    }
+  }
 
- async login(dto: any) {
+  async register(
+    dto: any,
+  ) {
 
-   const user =
-     await this.userRepo.findOne({
-       where: {
-         email: dto.email,
-       },
-     });
+    const existingUser =
+      await this
+        .userRepo
+        .findOne({
+          where: {
+            email:
+              dto.email,
+          },
+        });
 
-   if (!user) {
-     throw new UnauthorizedException(
-       'Invalid credentials',
-     );
-   }
+    if (
+      existingUser
+    ) {
 
-   const isMatch =
-     await bcrypt.compare(
-       dto.password,
-       user.password,
-     );
+      throw new BadRequestException(
+        'Email already exists',
+      );
+    }
 
-   if (!isMatch) {
-     throw new UnauthorizedException(
-       'Invalid credentials',
-     );
-   }
+    const hashedPassword =
+      await bcrypt.hash(
+        dto.password,
+        10,
+      );
 
-   const token =
-     this.jwtService.sign({
-       id: user.id,
-       email: user.email,
-     });
+    const user =
+      this.userRepo
+        .create({
+          ...dto,
+          password:
+            hashedPassword,
+        });
 
-   await this.kafkaClient.emit(
- 'login-events',
- JSON.stringify({
-   email: user.email,
-   time: new Date(),
- }),
-);
+    const savedUsers =
+      await this
+        .userRepo
+        .save(user);
 
-return {
- token,
-};
- }
- async changePassword(
- userId: number,
- dto: any,
-) {
+    const savedUser =
+      Array.isArray(
+        savedUsers,
+      )
+        ? savedUsers[0]
+        : savedUsers;
 
- const user =
- await this.userRepo.findOne({
-   where: {
-     id: userId,
-   },
- });
+    // Safe Kafka emit
+    this.kafkaClient
+      ?.emit(
+        'user-created',
 
- if (!user) {
-   throw new UnauthorizedException(
-     'User not found',
-   );
- }
+        JSON.stringify({
+          id:
+            savedUser.id,
 
- const isMatch =
- await bcrypt.compare(
-   dto.oldPassword,
-   user.password,
- );
+          name:
+            savedUser.name,
 
- if (!isMatch) {
-   throw new UnauthorizedException(
-     'Old password incorrect',
-   );
- }
+          email:
+            savedUser.email,
 
- const hashedPassword =
- await bcrypt.hash(
-   dto.newPassword,
-   10,
- );
+          phone:
+            savedUser.phone,
+        }),
+      );
 
- user.password =
- hashedPassword;
+    return {
+      message:
+        'User registered successfully',
+    };
+  }
 
- await this.userRepo.save(
-   user,
- );
+  async login(
+    dto: any,
+  ) {
 
- return {
-   message:
-   'Password updated successfully',
- };
-}
-async logout(
- token: string,
-) {
+    const user =
+      await this
+        .userRepo
+        .findOne({
+          where: {
+            email:
+              dto.email,
+          },
+        });
 
- await this.redisService.set(
-   `blacklist-${token}`,
-   'true',
- );
+    if (
+      !user
+    ) {
 
- console.log(
-   'TOKEN BLACKLISTED',
- );
+      throw new UnauthorizedException(
+        'Invalid credentials',
+      );
+    }
 
- return {
-   message:
-   'Logged out successfully',
- };
-}
+    const isMatch =
+      await bcrypt.compare(
+        dto.password,
+        user.password,
+      );
+
+    if (
+      !isMatch
+    ) {
+
+      throw new UnauthorizedException(
+        'Invalid credentials',
+      );
+    }
+
+    const token =
+      this.jwtService
+        .sign({
+          id:
+            user.id,
+
+          email:
+            user.email,
+        });
+
+    // Safe Kafka emit
+    this.kafkaClient
+      ?.emit(
+        'login-events',
+
+        JSON.stringify({
+          email:
+            user.email,
+
+          time:
+            new Date(),
+        }),
+      );
+
+    return {
+      token,
+    };
+  }
+
+  async changePassword(
+    userId: number,
+    dto: any,
+  ) {
+
+    const user =
+      await this
+        .userRepo
+        .findOne({
+          where: {
+            id:
+              userId,
+          },
+        });
+
+    if (
+      !user
+    ) {
+
+      throw new UnauthorizedException(
+        'User not found',
+      );
+    }
+
+    const isMatch =
+      await bcrypt.compare(
+        dto.oldPassword,
+        user.password,
+      );
+
+    if (
+      !isMatch
+    ) {
+
+      throw new UnauthorizedException(
+        'Old password incorrect',
+      );
+    }
+
+    const hashedPassword =
+      await bcrypt.hash(
+        dto.newPassword,
+        10,
+      );
+
+    user.password =
+      hashedPassword;
+
+    await this
+      .userRepo
+      .save(user);
+
+    return {
+      message:
+        'Password updated successfully',
+    };
+  }
+
+  async logout(
+    token: string,
+  ) {
+
+    await this
+      .redisService
+      .set(
+        `blacklist-${token}`,
+        'true',
+      );
+
+    console.log(
+      'TOKEN BLACKLISTED',
+    );
+
+    return {
+      message:
+        'Logged out successfully',
+    };
+  }
 }
