@@ -11,6 +11,7 @@ import {
 import {
     Kafka,
     Consumer,
+    Admin,
 } from 'kafkajs';
 
 import {
@@ -27,223 +28,173 @@ import {
     Profile,
 } from '../user/entities/profile.entity';
 
+const TOPICS = [
+    'user-created',
+    'login-events',
+];
+
 @Injectable()
 export class KafkaConsumerService
     implements
     OnModuleInit,
     OnModuleDestroy {
 
-    private consumer:
-        Consumer;
+    private consumer: Consumer;
+    private admin: Admin;
 
     constructor(
-        private config:
-            ConfigService,
+        private config: ConfigService,
 
         @InjectRepository(Profile)
-        private profileRepo:
-            Repository<Profile>,
+        private profileRepo: Repository<Profile>,
     ) {
 
         const broker =
-            this.config.get<string>(
-                'KAFKA_BROKER',
-            ) ||
+            this.config.get<string>('KAFKA_BROKER') ||
             'kafka-ms:9092';
 
         const username =
-            this.config.get<string>(
-                'KAFKA_USERNAME',
-            );
+            this.config.get<string>('KAFKA_USERNAME');
 
         const password =
-            this.config.get<string>(
-                'KAFKA_PASSWORD',
-            );
+            this.config.get<string>('KAFKA_PASSWORD');
 
         const isRailway =
-            !!username &&
-            !!password;
+            !!username && !!password;
 
         console.log({
             broker,
             username,
-            passwordLength:
-                password?.length,
+            passwordLength: password?.length,
         });
 
-        const kafka =
-            new Kafka({
+        const kafka = new Kafka({
+            clientId: 'user-service',
+            brokers: [broker],
+            ssl: false,
+            sasl: isRailway
+                ? { mechanism: 'plain', username, password }
+                : undefined,
+            retry: { retries: 8 },
+        });
 
-                clientId:
-                    'user-service',
+        this.consumer = kafka.consumer({
+            groupId: 'user-consumer',
+            sessionTimeout: 30000,
+            heartbeatInterval: 3000,
+            rebalanceTimeout: 60000,
+        });
 
-                brokers: [
-                    broker,
-                ],
+        this.admin = kafka.admin();
 
-                ssl: false,
-
-                sasl:
-                    isRailway
-                        ? {
-                            mechanism:
-                                'plain',
-
-                            username,
-                            password,
-                        }
-                        : undefined,
-
-                retry: {
-                    retries: 8,
-                },
-            });
-
-        this.consumer =
-            kafka.consumer({
-                groupId:
-                    'user-consumer',
-            });
-
-        console.log(
-            'Kafka Broker:',
-            broker,
-        );
-
-        console.log(
-            'Using Railway Kafka:',
-            isRailway,
-        );
+        console.log('Kafka Broker:', broker);
+        console.log('Using Railway Kafka:', isRailway);
     }
 
     async onModuleInit() {
 
         try {
 
-            await this.consumer
-                .connect();
+            // Ensure topics exist before subscribing
+            await this.admin.connect();
 
-            console.log(
-                'Kafka Consumer Connected',
+            const existingTopics =
+                await this.admin.listTopics();
+
+            const missing = TOPICS.filter(
+                (t) => !existingTopics.includes(t),
             );
 
+            if (missing.length > 0) {
+
+                console.log(
+                    'Creating Kafka topics:',
+                    missing,
+                );
+
+                await this.admin.createTopics({
+                    waitForLeaders: true,
+                    topics: missing.map((topic) => ({
+                        topic,
+                        numPartitions: 1,
+                        replicationFactor: 1,
+                    })),
+                });
+            }
+
+            await this.admin.disconnect();
+
+            // Connect consumer and subscribe
+            await this.consumer.connect();
+
+            console.log('Kafka Consumer Connected');
+
             await this.consumer.subscribe({
-                topic:
-                    'user-created',
-
-                fromBeginning:
-                    false,
-            });
-
-            await this.consumer.subscribe({
-                topic:
-                    'login-events',
-
-                fromBeginning:
-                    false,
+                topics: TOPICS,
+                fromBeginning: false,
             });
 
             await this.consumer.run({
 
-                eachMessage:
-                    async ({
-                        topic,
-                        message,
-                    }) => {
+                eachMessage: async ({
+                    topic,
+                    message,
+                }) => {
 
-                        const value =
-                            message.value?.toString();
+                    const value =
+                        message.value?.toString();
 
-                        if (!value)
-                            return;
+                    if (!value) return;
 
-                        const data =
-                            JSON.parse(
-                                value,
-                            );
+                    const data = JSON.parse(value);
 
-                        // LOGIN EVENTS
-                        if (
-                            topic ===
-                            'login-events'
-                        ) {
+                    // LOGIN EVENTS
+                    if (topic === 'login-events') {
 
-                            console.log(
-                                'LOGIN EVENT:',
-                                data,
-                            );
+                        console.log('LOGIN EVENT:', data);
 
-                            fs.appendFileSync(
-                                './login-events.log',
-                                JSON.stringify(
-                                    data,
-                                ) + '\n',
-                            );
-                        }
+                        fs.appendFileSync(
+                            './login-events.log',
+                            JSON.stringify(data) + '\n',
+                        );
+                    }
 
-                        // USER CREATED
-                        if (
-                            topic ===
-                            'user-created'
-                        ) {
+                    // USER CREATED
+                    if (topic === 'user-created') {
 
-                            console.log(
-                                'USER CREATED EVENT:',
-                                data,
-                            );
+                        console.log('USER CREATED EVENT:', data);
 
-                            const user =
-                                typeof data === 'string'
-                                    ? JSON.parse(data)
-                                    : data;
+                        const user =
+                            typeof data === 'string'
+                                ? JSON.parse(data)
+                                : data;
 
-                            const existingProfile =
-                                await this.profileRepo.findOne({
-                                    where: {
-                                        userId:
-                                            user.id,
-                                    },
-                                });
+                        const existingProfile =
+                            await this.profileRepo.findOne({
+                                where: { userId: user.id },
+                            });
 
-                            if (
-                                existingProfile
-                            ) {
-                                return;
-                            }
+                        if (existingProfile) return;
 
-                            const profile =
-                                this.profileRepo.create({
-                                    userId:
-                                        user.id,
+                        const profile =
+                            this.profileRepo.create({
+                                userId: user.id,
+                                name: user.name,
+                                email: user.email,
+                                phone: user.phone,
+                            });
 
-                                    name:
-                                        user.name,
+                        await this.profileRepo.save(profile);
 
-                                    email:
-                                        user.email,
-
-                                    phone:
-                                        user.phone,
-                                });
-
-                            await this.profileRepo.save(
-                                profile,
-                            );
-
-                            console.log(
-                                'PROFILE CREATED',
-                            );
-                        }
-                    },
+                        console.log('PROFILE CREATED');
+                    }
+                },
             });
 
-        } catch (
-        error
-        ) {
+        } catch (error) {
 
             console.error(
-                'Kafka Consumer Connection Error:',
+                'Kafka Consumer Error:',
                 error.message,
             );
         }
@@ -251,7 +202,6 @@ export class KafkaConsumerService
 
     async onModuleDestroy() {
 
-        await this.consumer
-            .disconnect();
+        await this.consumer.disconnect();
     }
 }
