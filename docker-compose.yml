@@ -15,6 +15,17 @@ services:
       - postgres_ms_data:/var/lib/postgresql/data
       - ./postgres-init:/docker-entrypoint-initdb.d
 
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U postgres"
+        ]
+
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   redis-ms:
     image: redis
     container_name: redis-ms
@@ -45,29 +56,60 @@ services:
 
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper-ms:2181
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-ms:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      KAFKA_ZOOKEEPER_CONNECT:
+        zookeeper-ms:2181
+
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE:
+        "true"
+
+      KAFKA_ADVERTISED_LISTENERS:
+        PLAINTEXT://kafka-ms:9092
+
+      KAFKA_LISTENERS:
+        PLAINTEXT://0.0.0.0:9092
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP:
+        PLAINTEXT:PLAINTEXT
+
+      KAFKA_INTER_BROKER_LISTENER_NAME:
+        PLAINTEXT
+
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
   auth-service:
     build:
       context: ./auth-service
 
-    container_name: auth-service-ms
+    container_name:
+      auth-service-ms
 
     depends_on:
-      - postgres-ms
-      - redis-ms
-      - kafka-ms
+      postgres-ms:
+        condition:
+          service_healthy
+
+      kafka-ms:
+        condition:
+          service_started
+
+      redis-ms:
+        condition:
+          service_started
 
     env_file:
-      - ./auth-service/.env.docker
+      - ./auth-service/.env.${ENV:-dev}
 
     environment:
-      ENV_FILE: .env.docker
+      # Keep Docker networking
+      REDIS_HOST:
+        redis-ms
+
+      KAFKA_BROKER:
+        kafka-ms:9092
+
+      ENV_FILE:
+        .env.${ENV:-dev}
 
     ports:
       - "3000:3000"
@@ -76,21 +118,44 @@ services:
     build:
       context: ./user-service
 
-    container_name: user-service-ms
+    container_name:
+      user-service-ms
 
     depends_on:
-      - postgres-ms
-      - redis-ms
-      - kafka-ms
+      postgres-ms:
+        condition:
+          service_healthy
+
+      kafka-ms:
+        condition:
+          service_started
+
+      redis-ms:
+        condition:
+          service_started
 
     env_file:
-      - ./user-service/.env.docker
+      - ./user-service/.env.${ENV:-dev}
 
     environment:
-      ENV_FILE: .env.docker
+      # Keep Docker networking
+      REDIS_HOST:
+        redis-ms
+
+      KAFKA_BROKER:
+        kafka-ms:9092
+
+      ENV_FILE:
+        .env.${ENV:-dev}
 
     ports:
       - "3001:3001"
 
+    # Persistent profile image storage
+    volumes:
+      - user_uploads:/app/uploads
+
 volumes:
   postgres_ms_data:
+
+  user_uploads:

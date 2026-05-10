@@ -1,98 +1,917 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Microservices Application
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A production-style **microservices-based full stack application** built using **NestJS, AngularJS, PostgreSQL, Redis, Kafka, Docker, JWT Authentication, and Persistent Storage**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+This project demonstrates:
 
-## Description
+* Authentication & Authorization
+* Microservices Architecture
+* JWT Security
+* Kafka-based communication
+* Redis Token Blacklisting
+* Dockerized Deployment
+* Persistent File Storage
+* Environment-based configuration
+* Profile Management
+* Rate Limiting / Throttling
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+The UI is intentionally kept simple using **AngularJS + Bootstrap** as required in the assignment.
 
-## Project setup
+---
 
-```bash
-$ npm install
+# 1. Features
+
+## Authentication Service
+
+* User Registration
+* User Login (JWT Authentication)
+* Logout (Token Invalidation)
+* Change Password (Old Password Verification)
+* JWT Token Generation
+* Login Rate Limiting
+* Secure Password Hashing
+
+## User Service
+
+* View Profile
+* Edit Profile
+* Upload Profile Photo
+* Persistent Profile Images
+* Protected APIs
+
+## Frontend
+
+* Login Page
+* Register Page
+* Dashboard
+* View Profile
+* Edit Profile
+* Change Password
+* Form Validations
+* Protected Routes
+
+---
+
+# 2. Tech Stack
+
+## Backend
+
+```text
+NestJS
+Node.js
+PostgreSQL
+Redis
+Kafka
+JWT
+Passport
+TypeORM
+Docker
+bcrypt
 ```
 
-## Compile and run the project
+## Frontend
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```text
+AngularJS
+Bootstrap
+HTML
+CSS
+JavaScript
 ```
 
-## Run tests
+---
 
-```bash
-# unit tests
-$ npm run test
+# 3. Microservices Architecture
 
-# e2e tests
-$ npm run test:e2e
+The application follows a **microservices architecture** pattern.
 
-# test coverage
-$ npm run test:cov
+## Auth Service
+
+Responsible for:
+
+* Registration
+* Login
+* Logout
+* JWT token generation
+* Password change
+* Authentication
+* Login throttling
+* Token invalidation
+
+Port:
+
+```text
+3000
 ```
 
-## Deployment
+---
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## User Service
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Responsible for:
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+* View profile
+* Edit profile
+* Upload profile photo
+* Serve uploaded images
+
+Port:
+
+```text
+3001
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+---
 
-## Resources
+## PostgreSQL
 
-Check out a few resources that may come in handy when working with NestJS:
+Responsible for:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+* Authentication data
+* User profile data
+* Persistent relational storage
 
-## Support
+Container:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```text
+postgres-ms
+```
 
-## Stay in touch
+Port:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```text
+5433
+```
 
-## License
+---
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Redis
+
+Responsible for:
+
+```text
+JWT token blacklisting
+```
+
+Container:
+
+```text
+redis-ms
+```
+
+Port:
+
+```text
+6380
+```
+
+---
+
+## Kafka
+
+Responsible for:
+
+```text
+Asynchronous communication
+between microservices
+```
+
+Containers:
+
+```text
+zookeeper-ms
+kafka-ms
+```
+
+Kafka broker:
+
+```text
+kafka-ms:9092
+```
+
+---
+
+## AngularJS Client
+
+Responsible for:
+
+* Authentication UI
+* Dashboard
+* Profile Management
+* API integration
+
+Frontend URL:
+
+```text
+http://localhost:8080
+```
+
+---
+
+# 4. High Level Application Flow
+
+## Registration Flow
+
+```text
+User Register Form
+        ↓
+Frontend Validation
+        ↓
+POST /auth/register
+        ↓
+NestJS Validation
+        ↓
+Password Hashing (bcrypt)
+        ↓
+Save User in PostgreSQL
+        ↓
+Kafka Event Published
+        ↓
+Success Response
+```
+
+---
+
+## Login Flow
+
+```text
+User Login
+        ↓
+POST /auth/login
+        ↓
+Credential Validation
+        ↓
+JWT Token Generated
+        ↓
+Token returned to frontend
+        ↓
+Stored in localStorage
+        ↓
+Dashboard Access
+```
+
+---
+
+## View Profile Flow
+
+```text
+Frontend sends JWT
+        ↓
+Authorization Header
+        ↓
+JWT Verification
+        ↓
+Profile fetched
+        ↓
+Response returned
+```
+
+---
+
+## Edit Profile Flow
+
+```text
+User updates profile
+        ↓
+PUT /user/profile
+        ↓
+JWT verification
+        ↓
+Database update
+        ↓
+Updated profile shown
+```
+
+---
+
+## Change Password Flow
+
+```text
+Old Password Entered
+        ↓
+POST /auth/change-password
+        ↓
+JWT validation
+        ↓
+Old password verification
+        ↓
+bcrypt hash new password
+        ↓
+DB updated
+        ↓
+Success response
+```
+
+---
+
+## Logout Flow
+
+```text
+Logout button clicked
+        ↓
+POST /auth/logout
+        ↓
+Token added to Redis blacklist
+        ↓
+Frontend removes token
+        ↓
+Redirect to login
+```
+
+---
+
+# 5. Security Features
+
+## JWT Authentication
+
+Protected APIs require:
+
+```text
+Authorization: Bearer <token>
+```
+
+Without valid token:
+
+```text
+401 Unauthorized
+```
+
+Protected routes:
+
+* Dashboard
+* Profile
+* Edit Profile
+* Change Password
+
+---
+
+## Password Hashing
+
+Passwords are never stored in plain text.
+
+Implementation:
+
+```text
+bcrypt
+```
+
+Flow:
+
+```text
+Raw Password
+        ↓
+bcrypt hash
+        ↓
+Saved in DB
+```
+
+---
+
+## Redis Token Blacklisting
+
+Redis is used for:
+
+```text
+JWT token invalidation
+```
+
+Problem:
+
+```text
+JWT is stateless.
+Logout alone does not invalidate token.
+```
+
+Solution:
+
+```text
+Redis blacklist implementation
+```
+
+Flow:
+
+```text
+Logout API called
+        ↓
+JWT extracted
+        ↓
+Saved in Redis blacklist
+        ↓
+Protected APIs verify token
+        ↓
+If blacklisted
+→ Unauthorized
+```
+
+Benefits:
+
+* Secure logout
+* Prevents old token reuse
+* Immediate revocation
+
+---
+
+## Login Rate Limiting
+
+Rate limiting is implemented only for:
+
+```text
+POST /auth/login
+```
+
+Purpose:
+
+```text
+Prevent brute-force attacks
+```
+
+Current configuration:
+
+```text
+5 login requests per minute
+```
+
+Example response:
+
+```json
+{
+  "statusCode": 429,
+  "message": "ThrottlerException"
+}
+```
+
+---
+
+# 6. Environment Support
+
+The application supports:
+
+```text
+.env.dev
+.env.test
+.env.live
+```
+
+Environment selection:
+
+```bash
+ENV=<environment>
+```
+
+Default if no ENV is passed:
+
+```text
+.env.dev
+```
+
+The compose file dynamically loads environment-specific files using:
+
+```yaml
+env_file:
+  - ./auth-service/.env.${ENV:-dev}
+```
+
+and
+
+```yaml
+env_file:
+  - ./user-service/.env.${ENV:-dev}
+```
+
+This means:
+
+```bash
+ENV=dev docker compose up --build
+```
+
+loads:
+
+```text
+.env.dev
+```
+
+```bash
+ENV=test docker compose up --build
+```
+
+loads:
+
+```text
+.env.test
+```
+
+```bash
+ENV=live docker compose up --build
+```
+
+loads:
+
+```text
+.env.live
+```
+
+---
+
+## Development Environment
+
+Command:
+
+```bash
+npm run setup:dev
+ENV=dev docker compose up --build
+```
+
+Purpose:
+
+```text
+Local development
+```
+
+Uses:
+
+* .env.dev
+* Development database
+* Development JWT secret
+* Local Kafka/Redis
+
+---
+
+## Test Environment (Recommended for Reviewer)
+
+Command:
+
+```bash
+npm run setup:test
+ENV=test docker compose up --build
+```
+
+Purpose:
+
+```text
+Assignment testing
+Reviewer testing
+```
+
+Behavior:
+
+* Loads `.env.test`
+* Creates test setup
+* Seeds dummy users automatically
+* Ready for immediate testing
+
+### Seeded Dummy Users
+
+| Name        | Email                                   | Password  | Phone      |
+| ----------- | --------------------------------------- | --------- | ---------- |
+| Test User 1 | [test1@test.com](mailto:test1@test.com) | Password1 | 9999999991 |
+| Test User 2 | [test2@test.com](mailto:test2@test.com) | Password1 | 9999999992 |
+| Test User 3 | [test3@test.com](mailto:test3@test.com) | Password1 | 9999999993 |
+
+Password for all users:
+
+```text
+Password1
+```
+
+Reviewer can directly login without registration.
+
+---
+
+## Live Environment
+
+Command:
+
+```bash
+npm run setup:live
+ENV=live docker compose up --build
+```
+
+Purpose:
+
+```text
+Production-style environment
+```
+
+Uses:
+
+* .env.live
+* Live configuration
+* Separate DB config
+* Production-style setup
+
+---
+
+## Why env files are committed?
+
+For reviewer convenience, `.env.dev`, `.env.test`, and `.env.live` are intentionally committed.
+
+This allows reviewers to:
+
+* Run immediately
+* Avoid manual setup
+* Understand configuration quickly
+* Test multiple environments
+
+In production:
+
+```text
+.env files should never be committed.
+Secrets should be managed securely.
+```
+
+---
+
+# 7. Database, Migration & Seeding
+
+Database:
+
+```text
+PostgreSQL
+```
+
+ORM:
+
+```text
+TypeORM
+```
+
+Current implementation:
+
+```text
+synchronize: true
+```
+
+Purpose:
+
+```text
+Automatic schema generation
+for assignment simplicity.
+```
+
+Database initialization:
+
+```text
+postgres-init/
+```
+
+Mounted into:
+
+```text
+/docker-entrypoint-initdb.d
+```
+
+### Seed User Script
+
+Dummy users are seeded using:
+
+```text
+scripts/seed-users.js
+```
+
+Implementation:
+
+```text
+bcrypt password hashing
+```
+
+Flow:
+
+```text
+Connect PostgreSQL
+        ↓
+Hash Password1
+        ↓
+Check existing users
+        ↓
+Insert missing users
+        ↓
+Prevent duplicates
+```
+
+---
+
+# 8. Persistent Image Storage
+
+## Problem
+
+If images are stored inside container:
+
+```text
+Container restart
+→ images lost
+```
+
+## Solution
+
+Implemented:
+
+```text
+Docker named volume
+```
+
+Example:
+
+```yaml
+volumes:
+  - user_uploads:/app/uploads
+```
+
+Benefits:
+
+* Survives restart
+* Survives container recreation
+* Works on reviewer system
+* No local machine dependency
+* Persistent storage
+
+Images accessible via:
+
+```text
+http://localhost:3001/uploads/<filename>
+```
+
+Example:
+
+```text
+http://localhost:3001/uploads/1778403589207.jpg
+```
+
+---
+
+# 9. Docker Services
+
+Docker Compose starts:
+
+```text
+postgres-ms
+redis-ms
+zookeeper-ms
+kafka-ms
+auth-service
+user-service
+```
+
+Internal communication uses Docker networking.
+
+Example:
+
+```text
+DB_HOST=postgres-ms
+REDIS_HOST=redis-ms
+KAFKA_BROKER=kafka-ms:9092
+```
+
+instead of localhost.
+
+---
+
+# 10. API Endpoints
+
+## Auth Service
+
+Base URL:
+
+```text
+http://localhost:3000
+```
+
+### Register
+
+```http
+POST /auth/register
+```
+
+### Login
+
+```http
+POST /auth/login
+```
+
+### Logout
+
+```http
+POST /auth/logout
+```
+
+### Change Password
+
+```http
+POST /auth/change-password
+```
+
+Payload:
+
+```json
+{
+  "oldPassword": "Password1",
+  "newPassword": "NewPassword1"
+}
+```
+
+---
+
+## User Service
+
+Base URL:
+
+```text
+http://localhost:3001
+```
+
+### View Profile
+
+```http
+GET /user/profile
+```
+
+### Update Profile
+
+```http
+PUT /user/profile
+```
+
+### Upload Photo
+
+```http
+POST /user/upload-photo
+```
+
+Multipart form data:
+
+```text
+photo=<file>
+```
+
+---
+
+# 11. Health Endpoints
+
+Auth Service:
+
+```text
+http://localhost:3000/health
+```
+
+User Service:
+
+```text
+http://localhost:3001/health
+```
+
+---
+
+# 12. Setup Instructions
+
+### Development
+
+```bash
+npm run setup:dev
+ENV=dev docker compose up --build
+```
+
+### Test
+
+```bash
+npm run setup:test
+ENV=test docker compose up --build
+```
+
+### Live
+
+```bash
+npm run setup:live
+ENV=live docker compose up --build
+```
+
+### Stop Application
+
+```bash
+docker compose down
+```
+
+### Full Reset
+
+```bash
+ENV=<environment> docker compose down -v
+```
+
+---
+
+# 13. Assignment Verification Flow
+
+1. Register User
+2. Login
+3. Dashboard opens
+4. View Profile
+5. Edit Profile
+6. Upload Profile Photo
+7. Change Password
+8. Logout
+9. Access protected route → redirected to login
+10. Restart docker → images persist
+11. Logout token becomes invalid
+12. Login rate limiting works
+
+---
+
+

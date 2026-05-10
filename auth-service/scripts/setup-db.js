@@ -1,80 +1,143 @@
-const { Client } =
-require('pg');
+const {
+  Client,
+} = require('pg');
 
 require('dotenv')
 .config({
- path:
- `.env.${
- process.argv[2]
- || 'dev'
- }`,
+  path:
+    `.env.${
+      process.argv[2]
+      || 'dev'
+    }`,
 });
 
 console.log(
-process.env.DB_NAME
+  'DB NAME:',
+  process.env
+    .DB_NAME
 );
 
 async function
 createDatabase() {
 
- const client =
- new Client({
-   host:
-   process.env
-   .DB_HOST,
+  const dbHost =
+    process.env
+      .DB_HOST;
 
-   port:
-   process.env
-   .DB_PORT,
+  const isCloudDb =
+    dbHost?.includes(
+      'neon.tech'
+    );
 
-   user:
-   process.env
-   .DB_USERNAME,
+  const client =
+    new Client({
 
-   password:
-   process.env
-   .DB_PASSWORD,
+      host:
+        dbHost,
 
-   database:
-   'postgres',
- });
+      port:
+        process.env
+          .DB_PORT,
 
- await client.connect();
+      user:
+        process.env
+          .DB_USERNAME,
 
- const dbName =
- process.env.DB_NAME;
+      password:
+        process.env
+          .DB_PASSWORD,
 
- const checkDb =
- await client.query(`
- SELECT datname
- FROM pg_database
- WHERE datname =
- '${dbName}'
- `);
+      database:
+        isCloudDb
+          ? process.env
+              .DB_NAME
+          : 'postgres',
 
- if (
- checkDb.rows.length
- === 0
- ) {
+      // Neon SSL support
+      ssl:
+        isCloudDb
+          ? {
+              rejectUnauthorized:
+                false,
+            }
+          : false,
+    });
 
-   await client.query(
-   `CREATE DATABASE ${dbName}`
-   );
+  try {
 
-   console.log(
-   `Database ${dbName}
-   created`
-   );
+    await client
+      .connect();
 
- } else {
+    const dbName =
+      process.env
+        .DB_NAME;
 
-   console.log(
-   `Database ${dbName}
-   already exists`
-   );
- }
+    // Cloud DB
+    if (
+      isCloudDb
+    ) {
 
- await client.end();
+      console.log(
+        `Cloud DB connected:
+${dbName}`
+      );
+
+      console.log(
+        'Skipping CREATE DATABASE for Neon'
+      );
+
+      return;
+    }
+
+    // Local Docker DB
+    const checkDb =
+      await client.query(
+        `
+        SELECT datname
+        FROM pg_database
+        WHERE datname = $1
+        `,
+        [dbName],
+      );
+
+    if (
+      checkDb.rows
+        .length === 0
+    ) {
+
+      await client
+        .query(
+          `CREATE DATABASE ${dbName}`
+        );
+
+      console.log(
+        `Database ${dbName}
+created`
+      );
+
+    } else {
+
+      console.log(
+        `Database ${dbName}
+already exists`
+      );
+    }
+
+  } catch (
+    error
+  ) {
+
+    console.error(
+      'DB setup failed:',
+      error.message
+    );
+
+    process.exit(1);
+
+  } finally {
+
+    await client.end();
+  }
 }
 
 createDatabase();

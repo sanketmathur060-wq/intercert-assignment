@@ -1,142 +1,199 @@
-const { Client } =
-require('pg');
+const {
+  Client,
+} = require('pg');
+
+const env =
+  process.argv[2]
+  || 'test';
 
 require('dotenv')
 .config({
- path:
- '.env.test',
+  path:
+    `.env.${env}`,
 });
 
 async function
 seedProfiles() {
 
- const client =
- new Client({
-   host:
-   process.env
-   .DB_HOST,
+  const dbHost =
+    process.env
+      .DB_HOST;
 
-   port:
-   process.env
-   .DB_PORT,
+  const client =
+    new Client({
 
-   user:
-   process.env
-   .DB_USERNAME,
+      host:
+        dbHost,
 
-   password:
-   process.env
-   .DB_PASSWORD,
+      port:
+        process.env
+          .DB_PORT,
 
-   database:
-   process.env
-   .DB_NAME,
- });
+      user:
+        process.env
+          .DB_USERNAME,
 
- await client.connect();
+      password:
+        process.env
+          .DB_PASSWORD,
 
- const profiles = [
- {
-   userId: 1,
-   name:
-   'Test User 1',
+      database:
+        process.env
+          .DB_NAME,
 
-   email:
-   'test1@test.com',
+      // Support Docker + Neon
+      ssl:
+        dbHost?.includes(
+          'neon.tech'
+        )
+          ? {
+              rejectUnauthorized:
+                false,
+            }
+          : false,
+    });
 
-   phone:
-   '9999999991',
- },
+  try {
 
- {
-   userId: 2,
-   name:
-   'Test User 2',
+    await client
+      .connect();
 
-   email:
-   'test2@test.com',
+    console.log(
+      'Connected to DB:',
+      process.env
+        .DB_NAME
+    );
 
-   phone:
-   '9999999992',
- },
+    const profiles = [
+      {
+        userId:
+          1,
 
- {
-   userId: 3,
-   name:
-   'Test User 3',
+        name:
+          'Test User 1',
 
-   email:
-   'test3@test.com',
+        email:
+          'test1@test.com',
 
-   phone:
-   '9999999993',
- },
- ];
+        phone:
+          '9999999991',
+      },
 
- for (
- const profile
- of profiles
- ) {
+      {
+        userId:
+          2,
 
- const exists =
- await client.query(
- `
- SELECT *
- FROM profile
- WHERE email=$1
- `,
- [profile.email],
- );
+        name:
+          'Test User 2',
 
- if (
- exists.rows.length
- === 0
- ) {
+        email:
+          'test2@test.com',
 
-   await client.query(
-   `
-   INSERT INTO profile
-   (
-     "userId",
-     name,
-     email,
-     phone,
-     photo
-   )
+        phone:
+          '9999999992',
+      },
 
-   VALUES
-   (
-     $1,
-     $2,
-     $3,
-     $4,
-     $5
-   )
-   `,
-   [
-     profile.userId,
-     profile.name,
-     profile.email,
-     profile.phone,
-     null,
-   ],
-   );
+      {
+        userId:
+          3,
 
-   console.log(
-   `${profile.email}
-   inserted`
-   );
+        name:
+          'Test User 3',
 
- } else {
+        email:
+          'test3@test.com',
 
-   console.log(
-   `${profile.email}
-   already exists`
-   );
- }
- }
+        phone:
+          '9999999993',
+      },
+    ];
 
- await client.end();
+    for (
+      const profile
+      of profiles
+    ) {
+
+      const exists =
+        await client.query(
+          `
+          SELECT *
+          FROM profile
+          WHERE "userId" = $1
+          `,
+          [
+            profile.userId,
+          ],
+        );
+
+      if (
+        exists.rows
+          .length === 0
+      ) {
+
+        await client
+          .query(
+            `
+            INSERT INTO profile
+            (
+              "userId",
+              name,
+              email,
+              phone,
+              photo
+            )
+
+            VALUES
+            (
+              $1,
+              $2,
+              $3,
+              $4,
+              $5
+            )
+            `,
+            [
+              profile.userId,
+              profile.name,
+              profile.email,
+              profile.phone,
+              null,
+            ],
+          );
+
+        console.log(
+          `${profile.email}
+profile inserted`
+        );
+
+      } else {
+
+        console.log(
+          `${profile.email}
+profile already exists`
+        );
+      }
+    }
+
+    console.log(
+      'Profile seeding completed'
+    );
+
+  } catch (
+    error
+  ) {
+
+    console.error(
+      'Profile seed failed:',
+      error.message
+    );
+
+    process.exit(1);
+
+  } finally {
+
+    await client
+      .end();
+  }
 }
 
 seedProfiles();

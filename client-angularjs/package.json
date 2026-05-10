@@ -1,0 +1,22 @@
+{
+  "name": "client-angularjs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "http-server -p 8080 -c-1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.2.0",
+    "angular": "^1.8.3",
+    "angular-animate": "^1.8.3",
+    "angular-route": "^1.8.3",
+    "angular-toastr": "^2.1.1",
+    "bootstrap": "^5.3.8",
+    "http-server": "^14.1.1"
+  }
+}

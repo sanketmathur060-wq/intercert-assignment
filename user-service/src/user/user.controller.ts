@@ -1,109 +1,167 @@
 import {
- Controller,
- Get,
- Put,
- Req,
- Body,
- UseGuards,
- Post,
- UploadedFile,
- UseInterceptors,
+  Controller,
+  Get,
+  Put,
+  Req,
+  Body,
+  UseGuards,
+  Post,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 
-import { FileInterceptor }
-from '@nestjs/platform-express';
+import {
+  FileInterceptor,
+} from '@nestjs/platform-express';
 
-import { diskStorage }
-from 'multer';
+import {
+  diskStorage,
+} from 'multer';
 
-import { extname }
-from 'path';
+import {
+  extname,
+  join,
+} from 'path';
 
-import { UserService }
-from './user.service';
+import * as fs from 'fs';
 
+import {
+  UserService,
+} from './user.service';
 
-import { JwtAuthGuard }
-from '../auth/guards/jwt-auth.guard';
+import {
+  JwtAuthGuard,
+} from '../auth/guards/jwt-auth.guard';
 
 @Controller('user')
 export class UserController {
 
- constructor(
-   private userService: UserService,
- ) {}
+  constructor(
+    private userService:
+      UserService,
+  ) { }
 
- @UseGuards(JwtAuthGuard)
+  // GET PROFILE
 
- @Get('profile')
+  @UseGuards(
+    JwtAuthGuard,
+  )
+  @Get(
+    'profile',
+  )
+  getProfile(
+    @Req() req: any,
+  ) {
 
- getProfile(
-   @Req() req: any,
- ) {
+    return this.userService
+      .getProfile(
+        req.user,
+      );
+  }
 
-   return this.userService.getProfile(
-     req.user,
-   );
- }
+  // UPDATE PROFILE
 
- @UseGuards(JwtAuthGuard)
+  @UseGuards(
+    JwtAuthGuard,
+  )
+  @Put(
+    'profile',
+  )
+  updateProfile(
+    @Req() req: any,
+    @Body() dto: any,
+  ) {
 
- @Put('profile')
+    return this.userService
+      .updateProfile(
+        req.user,
+        dto,
+      );
+  }
 
- updateProfile(
-   @Req() req: any,
-   @Body() dto: any,
- ) {
+  // UPLOAD PROFILE PHOTO
 
-   return this.userService.updateProfile(
-     req.user,
-     dto,
-   );
- }
+  @UseGuards(
+    JwtAuthGuard,
+  )
+  @Post(
+    'upload-photo',
+  )
+  @UseInterceptors(
+    FileInterceptor(
+      'photo',
+      {
+        storage:
+          diskStorage({
 
- @UseGuards(JwtAuthGuard)
+            destination:
+              (
+                req,
+                file,
+                callback,
+              ) => {
 
- @Post('upload-photo')
+                const uploadPath =
+                  join(
+                    process.cwd(),
+                    'uploads',
+                  );
 
- @UseInterceptors(
-   FileInterceptor('photo', {
+                // Create folder if not exists
+                if (
+                  !fs.existsSync(
+                    uploadPath,
+                  )
+                ) {
 
-     storage: diskStorage({
+                  fs.mkdirSync(
+                    uploadPath,
+                    {
+                      recursive:
+                        true,
+                    },
+                  );
+                }
 
-       destination:
-         './uploads',
+                callback(
+                  null,
+                  uploadPath,
+                );
+              },
 
-       filename: (
-         req,
-         file,
-         callback,
-       ) => {
+            filename:
+              (
+                req,
+                file,
+                callback,
+              ) => {
 
-         const uniqueName =
-           Date.now() +
-           extname(
-             file.originalname,
-           );
+                const uniqueName =
+                  `${Date.now()}${extname(
+                    file.originalname,
+                  )}`;
 
-         callback(
-           null,
-           uniqueName,
-         );
-       },
-     }),
-   }),
- )
+                callback(
+                  null,
+                  uniqueName,
+                );
+              },
+          }),
+      },
+    ),
+  )
 
- uploadPhoto(
-   @Req() req: any,
+  uploadPhoto(
+    @Req() req: any,
 
-   @UploadedFile()
-   file: any,
- ) {
+    @UploadedFile()
+    file: any,
+  ) {
 
-   return this.userService.uploadPhoto(
-     req.user,
-     file.filename,
-   );
- }
+    return this.userService
+      .uploadPhoto(
+        req.user,
+        file.filename,
+      );
+  }
 }

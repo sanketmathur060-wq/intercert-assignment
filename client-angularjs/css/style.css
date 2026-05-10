@@ -1,0 +1,27 @@
+.auth-bg {
+    background:
+        linear-gradient(
+            135deg,
+            #667eea,
+            #764ba2
+        );
+}
+
+.card {
+    backdrop-filter:
+        blur(10px);
+}
+
+.form-control {
+    border-radius:
+        12px;
+    height:
+        48px;
+}
+
+.btn {
+    border-radius:
+        12px;
+    height:
+        48px;
+}

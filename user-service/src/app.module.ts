@@ -33,8 +33,15 @@ import {
 
 import {
   redisStore,
-} from
-  'cache-manager-ioredis-yet';
+} from 'cache-manager-ioredis-yet';
+
+import {
+  ServeStaticModule,
+} from '@nestjs/serve-static';
+
+import {
+  join,
+} from 'path';
 
 import {
   KafkaController,
@@ -63,97 +70,31 @@ import {
 @Module({
   imports: [
 
+    // Serve uploaded images
+    ServeStaticModule.forRoot({
+      rootPath:
+        join(
+          __dirname,
+          '..',
+          'uploads',
+        ),
+
+      serveRoot:
+        '/uploads',
+    }),
+
     ConfigModule.forRoot({
-  envFilePath:
-    process.env.ENV_FILE
-      || '.env.dev',
+      envFilePath:
+        process.env
+          .ENV_FILE ||
+        '.env.dev',
 
-  isGlobal: true,
-}),
-
-    TypeOrmModule.forRootAsync({
-      inject: [
-        ConfigService,
-      ],
-
-
-      useFactory:
-        (
-          config:
-            ConfigService,
-        ) => ({
-
-          type: 'postgres',
-
-          host:
-            config.get<string>(
-              'DB_HOST',
-            )!,
-
-          port:
-            Number(
-              config.get(
-                'DB_PORT',
-              )),
-
-          username:
-            config.get<string>(
-              'DB_USERNAME',
-            )!,
-
-          password:
-            config.get<string>(
-              'DB_PASSWORD',
-            )!,
-
-          database:
-            config.get<string>(
-              'DB_NAME',
-            )!,
-
-          entities: [
-            Profile,
-          ],
-
-          synchronize:
-            true,
-        }),
+      isGlobal:
+        true,
     }),
 
-    CacheModule.registerAsync({
-      isGlobal: true,
-
-      inject: [
-        ConfigService,
-      ],
-
-      useFactory:
-        async (
-          config:
-            ConfigService,
-        ) => ({
-          store:
-            await redisStore({
-              host:
-                config.get<string>(
-                  'REDIS_HOST',
-                )!,
-
-              port:
-                Number(
-                  config.get(
-                    'REDIS_PORT',
-                  )),
-            }),
-
-          ttl: 120,
-        }),
-    }),
-
-    ClientsModule.registerAsync([
-      {
-        name:
-          'KAFKA_SERVICE',
+    TypeOrmModule
+      .forRootAsync({
 
         inject: [
           ConfigService,
@@ -163,62 +104,208 @@ import {
           (
             config:
               ConfigService,
+          ) => {
+
+            const dbHost =
+              config.get<string>(
+                'DB_HOST'
+              );
+
+            const isCloudDb =
+              dbHost?.includes(
+                'neon.tech'
+              ) ||
+              dbHost?.includes(
+                'amazonaws.com'
+              ) ||
+              dbHost?.includes(
+                'supabase.co'
+              ) ||
+              dbHost?.includes(
+                'railway.app'
+              );
+
+            console.log(
+              'CONNECTED DB:',
+              config.get(
+                'DB_NAME'
+              )
+            );
+
+            console.log(
+              'DB HOST:',
+              dbHost
+            );
+
+            console.log(
+              'IS CLOUD DB:',
+              isCloudDb
+            );
+
+            return {
+
+              type:
+                'postgres',
+
+              host:
+                dbHost!,
+
+              port:
+                Number(
+                  config.get(
+                    'DB_PORT'
+                  )
+                ),
+
+              username:
+                config.get<string>(
+                  'DB_USERNAME'
+                )!,
+
+              password:
+                config.get<string>(
+                  'DB_PASSWORD'
+                )!,
+
+              database:
+                config.get<string>(
+                  'DB_NAME'
+                )!,
+
+              // SSL for cloud DB
+              ssl:
+                isCloudDb
+                  ? {
+                      rejectUnauthorized:
+                        false,
+                    }
+                  : false,
+
+              entities: [
+                Profile,
+              ],
+
+              synchronize:
+                false,
+
+              logging:
+                false,
+            };
+          },
+      }),
+
+    CacheModule
+      .registerAsync({
+        isGlobal:
+          true,
+
+        inject: [
+          ConfigService,
+        ],
+
+        useFactory:
+          async (
+            config:
+              ConfigService,
           ) => ({
 
-            transport:
-              Transport.KAFKA,
-
-            options: {
-              client: {
-                brokers: [
+            store:
+              await redisStore({
+                host:
                   config.get<string>(
-                    'KAFKA_BROKER',
+                    'REDIS_HOST'
                   )!,
-                ],
-              },
 
-              consumer: {
-                groupId:
-                  'user-consumer',
-              },
-            },
+                port:
+                  Number(
+                    config.get(
+                      'REDIS_PORT'
+                    )
+                  ),
+              }),
+
+            ttl:
+              120,
           }),
-      },
-    ]),
+      }),
+
+    ClientsModule
+      .registerAsync([
+        {
+          name:
+            'KAFKA_SERVICE',
+
+          inject: [
+            ConfigService,
+          ],
+
+          useFactory:
+            (
+              config:
+                ConfigService,
+            ) => ({
+
+              transport:
+                Transport.KAFKA,
+
+              options: {
+                client: {
+                  brokers: [
+                    config.get<string>(
+                      'KAFKA_BROKER'
+                    )!,
+                  ],
+                },
+
+                consumer: {
+                  groupId:
+                    'user-consumer',
+                },
+              },
+            }),
+        },
+      ]),
 
     PassportModule,
 
-    JwtModule.registerAsync({
-      inject: [
-        ConfigService,
-      ],
+    JwtModule
+      .registerAsync({
+        inject: [
+          ConfigService,
+        ],
 
-      useFactory:
-        (
-          config:
-            ConfigService,
-        ) => ({
-          secret:
-            config.get<string>(
-              'JWT_SECRET',
-            )!,
+        useFactory:
+          (
+            config:
+              ConfigService,
+          ) => ({
+            secret:
+              config.get<string>(
+                'JWT_SECRET'
+              )!,
 
-          signOptions: {
-            expiresIn:
-              '1d',
-          },
-        }),
-    }),
+            signOptions: {
+              expiresIn:
+                '1d',
+            },
+          }),
+      }),
 
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 5,
-      },
-    ]),
-    TypeOrmModule.forFeature([
-      Profile,
-    ]),
+    ThrottlerModule
+      .forRoot([
+        {
+          ttl:
+            60000,
+
+          limit:
+            5,
+        },
+      ]),
+
+    TypeOrmModule
+      .forFeature([
+        Profile,
+      ]),
 
     UserModule,
   ],
@@ -233,4 +320,5 @@ import {
     RedisService,
   ],
 })
-export class AppModule { }
+
+export class AppModule {}

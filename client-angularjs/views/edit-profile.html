@@ -1,0 +1,272 @@
+<div
+    ng-controller="UserController"
+    class="min-vh-100 bg-light">
+
+    <!-- Navbar -->
+
+    <nav
+        class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+
+        <div class="container">
+
+            <a
+                ng-href="#!/profile"
+                class="navbar-brand text-white text-decoration-none fw-bold">
+
+                ← Back to Profile
+
+            </a>
+
+            <button
+                class="btn btn-danger"
+                ng-click="logout()">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </nav>
+
+    <!-- Edit Profile -->
+
+    <div class="container py-5">
+
+        <div class="row justify-content-center">
+
+            <div class="col-md-6">
+
+                <div
+                    class="card shadow border-0 rounded-4 p-4">
+
+                    <h2
+                        class="text-center fw-bold mb-4">
+
+                        Edit Profile
+
+                    </h2>
+
+                    <form
+                        name="editProfileForm"
+                        ng-submit="
+                        editProfileForm.$valid &&
+                        updateProfile()
+                        "
+                        novalidate>
+
+                        <!-- Name -->
+
+                        <div class="mb-3">
+
+                            <label
+                                class="form-label">
+
+                                Name
+
+                            </label>
+
+                            <input
+                                type="text"
+                                name="name"
+                                class="form-control"
+                                ng-model="profile.name"
+                                ng-minlength="3"
+                                required>
+
+                            <small
+                                class="text-danger"
+                                ng-show="
+                                editProfileForm.name.$touched &&
+                                editProfileForm.name.$error.required">
+
+                                Name is required
+
+                            </small>
+
+                            <small
+                                class="text-danger"
+                                ng-show="
+                                editProfileForm.name.$touched &&
+                                editProfileForm.name.$error.minlength">
+
+                                Minimum 3 characters required
+
+                            </small>
+
+                        </div>
+
+                        <!-- Email -->
+
+                        <div class="mb-3">
+
+                            <label
+                                class="form-label">
+
+                                Email
+
+                            </label>
+
+                            <input
+                                type="email"
+                                name="email"
+                                class="form-control"
+                                ng-model="profile.email"
+                                required>
+
+                            <small
+                                class="text-danger"
+                                ng-show="
+                                editProfileForm.email.$touched &&
+                                editProfileForm.email.$error.required">
+
+                                Email is required
+
+                            </small>
+
+                            <small
+                                class="text-danger"
+                                ng-show="
+                                editProfileForm.email.$touched &&
+                                editProfileForm.email.$error.email">
+
+                                Enter valid email
+
+                            </small>
+
+                        </div>
+
+                        <!-- Phone -->
+
+                        <div class="mb-4">
+
+                            <label
+                                class="form-label">
+
+                                Phone
+
+                            </label>
+
+                            <input
+                                type="text"
+                                name="phone"
+                                class="form-control"
+                                ng-model="profile.phone"
+                                ng-pattern="/^[0-9]{10}$/"
+                                required>
+
+                            <small
+                                class="text-danger"
+                                ng-show="
+                                editProfileForm.phone.$touched &&
+                                editProfileForm.phone.$error.required">
+
+                                Phone number required
+
+                            </small>
+
+                            <small
+                                class="text-danger"
+                                ng-show="
+                                editProfileForm.phone.$touched &&
+                                editProfileForm.phone.$error.pattern">
+
+                                Enter valid 10-digit number
+
+                            </small>
+
+                        </div>
+
+                        <!-- Profile Photo -->
+
+                        <div class="mb-4">
+
+                            <label
+                                class="form-label fw-bold">
+
+                                Profile Photo
+
+                            </label>
+
+                            <!-- Existing Image -->
+
+                            <div
+                                class="text-center mb-3">
+
+                                <img
+                                    ng-src="{{
+                                    previewUrl ||
+                                    profile.photoUrl ||
+                                    'https://via.placeholder.com/150'
+                                    }}"
+                                    class="rounded-circle border shadow"
+                                    width="140"
+                                    height="140"
+                                    style="
+                                    object-fit: cover;
+                                    ">
+
+                            </div>
+
+                            <!-- Existing File Name -->
+
+                            <div
+                                ng-if="profile.photo"
+                                class="text-center mb-2">
+
+                                <small
+                                    class="text-muted">
+
+                                    Current File:
+                                    <strong>
+                                        {{profile.photo}}
+                                    </strong>
+
+                                </small>
+
+                            </div>
+
+                            <!-- Upload -->
+
+                            <input
+                                type="file"
+                                class="form-control"
+                                accept="image/*"
+                                onchange="
+                                angular
+                                .element(this)
+                                .scope()
+                                .previewImage(this)
+                                ">
+
+                            <small
+                                class="text-muted">
+
+                                Select new image to
+                                update profile photo
+
+                            </small>
+
+                        </div>
+
+                        <button
+                            type="submit"
+                            class="btn btn-success w-100"
+                            ng-disabled="
+                            editProfileForm.$invalid">
+
+                            Save Changes
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

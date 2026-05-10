@@ -1,145 +1,196 @@
 const bcrypt =
 require('bcrypt');
 
-const { Client } =
-require('pg');
+const {
+  Client,
+} = require('pg');
+
+const env =
+  process.argv[2]
+  || 'test';
 
 require('dotenv')
 .config({
- path:
- '.env.test',
+  path:
+    `.env.${env}`,
 });
 
 async function
 seedUsers() {
 
- const client =
- new Client({
-   host:
-   process.env
-   .DB_HOST,
+  const dbHost =
+    process.env
+      .DB_HOST;
 
-   port:
-   process.env
-   .DB_PORT,
+  const client =
+    new Client({
 
-   user:
-   process.env
-   .DB_USERNAME,
+      host:
+        dbHost,
 
-   password:
-   process.env
-   .DB_PASSWORD,
+      port:
+        process.env
+          .DB_PORT,
 
-   database:
-   process.env
-   .DB_NAME,
- });
+      user:
+        process.env
+          .DB_USERNAME,
 
- await client.connect();
+      password:
+        process.env
+          .DB_PASSWORD,
 
- const password =
- await bcrypt.hash(
- 'Password1',
- 10,
- );
+      database:
+        process.env
+          .DB_NAME,
 
- const users = [
- {
-   name:
-   'Test User 1',
+      // Works for Neon + Local Docker
+      ssl:
+        dbHost?.includes(
+          'neon.tech'
+        )
+          ? {
+              rejectUnauthorized:
+                false,
+            }
+          : false,
+    });
 
-   email:
-   'test1@test.com',
+  try {
 
-   phone:
-   '9999999991',
- },
+    await client
+      .connect();
 
- {
-   name:
-   'Test User 2',
+    console.log(
+      'Connected to DB:',
+      process.env
+        .DB_NAME
+    );
 
-   email:
-   'test2@test.com',
+    const password =
+      await bcrypt.hash(
+        'Password1',
+        10,
+      );
 
-   phone:
-   '9999999992',
- },
+    const users = [
+      {
+        name:
+          'Test User 1',
 
- {
-   name:
-   'Test User 3',
+        email:
+          'test1@test.com',
 
-   email:
-   'test3@test.com',
+        phone:
+          '9999999991',
+      },
 
-   phone:
-   '9999999993',
- },
- ];
+      {
+        name:
+          'Test User 2',
 
- for (
- const user
- of users
- ) {
+        email:
+          'test2@test.com',
 
- const exists =
- await client.query(
- `
- SELECT *
- FROM "user"
- WHERE email=$1
- `,
- [user.email],
- );
+        phone:
+          '9999999992',
+      },
 
- if (
- exists.rows.length
- === 0
- ) {
+      {
+        name:
+          'Test User 3',
 
-   await client.query(
-   `
-   INSERT INTO "user"
-   (
-     name,
-     email,
-     password,
-     phone
-   )
+        email:
+          'test3@test.com',
 
-   VALUES
-   (
-     $1,
-     $2,
-     $3,
-     $4
-   )
-   `,
-   [
-     user.name,
-     user.email,
-     password,
-     user.phone,
-   ],
-   );
+        phone:
+          '9999999993',
+      },
+    ];
 
-   console.log(
-   `${user.email}
-   inserted`
-   );
+    for (
+      const user
+      of users
+    ) {
 
- } else {
+      const exists =
+        await client.query(
+          `
+          SELECT *
+          FROM "user"
+          WHERE email = $1
+          `,
+          [
+            user.email,
+          ],
+        );
 
-   console.log(
-   `${user.email}
-   already exists`
-   );
- }
- }
+      if (
+        exists.rows
+          .length === 0
+      ) {
 
- await client.end();
+        await client
+          .query(
+            `
+            INSERT INTO "user"
+            (
+              name,
+              email,
+              password,
+              phone
+            )
+
+            VALUES
+            (
+              $1,
+              $2,
+              $3,
+              $4
+            )
+            `,
+            [
+              user.name,
+              user.email,
+              password,
+              user.phone,
+            ],
+          );
+
+        console.log(
+          `${user.email}
+inserted`,
+        );
+
+      } else {
+
+        console.log(
+          `${user.email}
+already exists`,
+        );
+      }
+    }
+
+    console.log(
+      'Seeding completed'
+    );
+
+  } catch (
+    error
+  ) {
+
+    console.error(
+      'Seeding failed:',
+      error.message,
+    );
+
+    process.exit(1);
+
+  } finally {
+
+    await client
+      .end();
+  }
 }
 
 seedUsers();

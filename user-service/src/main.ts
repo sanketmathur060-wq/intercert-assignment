@@ -1,63 +1,96 @@
 import {
- NestFactory,
+  NestFactory,
 } from '@nestjs/core';
 
 import {
- MicroserviceOptions,
- Transport,
+  MicroserviceOptions,
+  Transport,
 } from '@nestjs/microservices';
 
 import {
- ConfigService,
+  ConfigService,
 } from '@nestjs/config';
 
 import {
- AppModule,
+  AppModule,
 } from './app.module';
 
-async function bootstrap() {
+async function
+bootstrap() {
 
- const app =
- await NestFactory.create(
- AppModule,
- );
+  const app =
+    await NestFactory
+      .create(
+        AppModule,
+      );
 
- const config =
- app.get(
- ConfigService,
- );
+  // CORS
+  app.enableCors({
+    origin:
+      '*',
 
- app.connectMicroservice
- <MicroserviceOptions>({
-   transport:
-   Transport.KAFKA,
+    credentials:
+      true,
 
-   options: {
-     client: {
-       brokers: [
-         config.get<string>(
-           'KAFKA_BROKER',
-         )!,
-       ],
-     },
+    methods: [
+      'GET',
+      'POST',
+      'PUT',
+      'DELETE',
+      'OPTIONS',
+    ],
 
-     consumer: {
-       groupId:
-       'user-consumer',
-     },
-   },
- });
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+    ],
+  });
 
- await app
- .startAllMicroservices();
+  const config =
+    app.get(
+      ConfigService,
+    );
 
- await app.listen(
-   3001,
- );
+  const port =
+    Number(
+      config.get(
+        'PORT',
+      )
+    ) || 3001;
 
- console.log(
-   'User Service Running',
- );
+  // Kafka
+  app.connectMicroservice
+    <MicroserviceOptions>({
+      transport:
+        Transport.KAFKA,
+
+      options: {
+        client: {
+          brokers: [
+            config.get<string>(
+              'KAFKA_BROKER',
+            )!,
+          ],
+        },
+
+        consumer: {
+          groupId:
+            'user-consumer',
+        },
+      },
+    });
+
+  await app
+    .startAllMicroservices();
+
+  await app.listen(
+    port,
+    '0.0.0.0',
+  );
+
+  console.log(
+    `User Service Running on Port ${port}`
+  );
 }
 
 bootstrap();

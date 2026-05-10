@@ -1,0 +1,276 @@
+<div
+    ng-controller="AuthController"
+    class="auth-bg min-vh-100 d-flex align-items-center">
+
+    <div class="container">
+
+        <div class="row justify-content-center">
+
+            <div class="col-md-6">
+
+                <div class="card border-0 shadow-lg rounded-4 p-4">
+
+                    <div class="text-center mb-4">
+
+                        <i
+                            class="fas fa-user-plus fa-4x text-success mb-3">
+                        </i>
+
+                        <h2 class="fw-bold">
+                            Create Account
+                        </h2>
+
+                        <p class="text-muted">
+                            Register to continue
+                        </p>
+
+                    </div>
+
+                    <form
+                        name="registerForm"
+                        ng-submit="register()"
+                        novalidate>
+
+                        <!-- Name -->
+
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Name
+                            </label>
+
+                            <input
+                                type="text"
+                                class="form-control"
+                                name="name"
+                                ng-model="name"
+                                placeholder="Enter name"
+                                minlength="3"
+                                autocomplete="off"
+                                required>
+
+                            <small
+                                class="text-danger"
+                                ng-if="
+                                registerForm.name.$dirty &&
+                                registerForm.name.$error.required">
+
+                                Name is required
+
+                            </small>
+
+                            <small
+                                class="text-danger"
+                                ng-if="
+                                registerForm.name.$dirty &&
+                                registerForm.name.$error.minlength">
+
+                                Minimum 3 characters required
+
+                            </small>
+
+                        </div>
+
+                        <!-- Email -->
+
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Email
+                            </label>
+
+                            <input
+                                type="email"
+                                class="form-control"
+                                name="email"
+                                ng-model="email"
+                                placeholder="Enter email"
+                                autocomplete="off"
+                                required>
+
+                            <small
+                                class="text-danger"
+                                ng-if="
+                                registerForm.email.$dirty &&
+                                registerForm.email.$error.required">
+
+                                Email is required
+
+                            </small>
+
+                            <small
+                                class="text-danger"
+                                ng-if="
+                                registerForm.email.$dirty &&
+                                registerForm.email.$error.email">
+
+                                Enter valid email
+
+                            </small>
+
+                        </div>
+
+                        <!-- Phone -->
+
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Phone
+                            </label>
+
+                            <input
+                                type="text"
+                                class="form-control"
+                                name="phone"
+                                ng-model="phone"
+                                placeholder="Enter phone"
+                                ng-pattern="/^[0-9]{10}$/"
+                                autocomplete="off"
+                                required>
+
+                            <small
+                                class="text-danger"
+                                ng-if="
+                                registerForm.phone.$dirty &&
+                                registerForm.phone.$error.required">
+
+                                Phone is required
+
+                            </small>
+
+                            <small
+                                class="text-danger"
+                                ng-if="
+                                registerForm.phone.$dirty &&
+                                registerForm.phone.$error.pattern">
+
+                                Enter valid 10-digit phone
+
+                            </small>
+
+                        </div>
+
+                        <!-- Password -->
+
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Password
+                            </label>
+
+                            <input
+                                type="password"
+                                class="form-control"
+                                name="password"
+                                ng-model="password"
+                                placeholder="Enter password"
+                                minlength="8"
+                                autocomplete="off"
+                                required>
+
+                            <small
+                                class="text-danger"
+                                ng-if="
+                                registerForm.password.$dirty &&
+                                registerForm.password.$error.required">
+
+                                Password is required
+
+                            </small>
+
+                            <small
+                                class="text-danger"
+                                ng-if="
+                                registerForm.password.$dirty &&
+                                registerForm.password.$error.minlength">
+
+                                Minimum 8 characters required
+
+                            </small>
+
+                        </div>
+
+                        <!-- Confirm Password -->
+
+                        <div class="mb-4">
+
+                            <label class="form-label">
+                                Confirm Password
+                            </label>
+
+                            <input
+                                type="password"
+                                class="form-control"
+                                name="confirmPassword"
+                                ng-model="confirmPassword"
+                                placeholder="Confirm password"
+                                autocomplete="off"
+                                required>
+
+                            <small
+                                class="text-danger"
+                                ng-if="
+                                registerForm.confirmPassword.$dirty &&
+                                registerForm.confirmPassword.$error.required">
+
+                                Confirm password required
+
+                            </small>
+
+                            <small
+                                class="text-danger"
+                                ng-if="
+                                confirmPassword &&
+                                password !== confirmPassword">
+
+                                Passwords do not match
+
+                            </small>
+
+                        </div>
+
+                        <button
+                            type="submit"
+                            class="btn btn-success w-100">
+
+                            <i
+                                class="fas fa-user-plus me-2">
+                            </i>
+
+                            Register
+
+                        </button>
+
+                    </form>
+
+                    <div
+                        class="d-flex justify-content-between mt-4">
+
+                        <a
+                            href="#!/"
+                            class="btn btn-outline-secondary">
+
+                            ← Back
+
+                        </a>
+
+                        <a
+                            href="#!/"
+                            class="fw-bold text-decoration-none">
+
+                            Already have account?
+                            Login
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

@@ -1,24 +1,87 @@
-import { ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import {
+  ValidationPipe,
+} from '@nestjs/common';
 
-import { AppModule } from './app.module';
-import { ThrottlerGuard }
-from '@nestjs/throttler';
+import {
+  NestFactory,
+} from '@nestjs/core';
 
-import { APP_GUARD }
-from '@nestjs/core';
+import {
+  ConfigService,
+} from '@nestjs/config';
 
-async function bootstrap() {
+import {
+  AppModule,
+} from './app.module';
 
- const app =
-   await NestFactory.create(AppModule);
+async function
+bootstrap() {
 
- app.useGlobalPipes(
-   new ValidationPipe(),
- );
+  const app =
+    await NestFactory
+      .create(
+        AppModule,
+      );
 
- app.enableCors();
+  const config =
+    app.get(
+      ConfigService,
+    );
 
- await app.listen(3000);
+  const port =
+    Number(
+      config.get(
+        'PORT',
+      )
+    ) || 3000;
+
+  // Validation
+  app.useGlobalPipes(
+    new ValidationPipe({
+
+      whitelist:
+        true,
+
+      forbidNonWhitelisted:
+        true,
+
+      transform:
+        true,
+    }),
+  );
+
+  // CORS
+  app.enableCors({
+
+    origin:
+      '*',
+
+    credentials:
+      true,
+
+    methods: [
+      'GET',
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+      'OPTIONS',
+    ],
+
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+    ],
+  });
+
+  await app.listen(
+    port,
+    '0.0.0.0',
+  );
+
+  console.log(
+    `Auth Service Running on Port ${port}`
+  );
 }
+
 bootstrap();
