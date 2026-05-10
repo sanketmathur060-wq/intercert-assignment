@@ -175,66 +175,73 @@ import {
 
     // REDIS CACHE
     CacheModule.registerAsync({
-      isGlobal: true,
+  isGlobal: true,
 
-      inject: [ConfigService],
+  inject: [ConfigService],
 
-      useFactory: async (
-        config: ConfigService,
-      ) => {
+  useFactory: async (
+    config: ConfigService,
+  ) => {
 
-        const redisUrl =
-          config.get<string>(
-            'REDIS_URL',
-          );
+    const isProduction =
+      process.env.NODE_ENV ===
+      'production';
 
-        console.log(
-          'Using Redis URL:',
-          !!redisUrl,
-        );
+    console.log(
+      isProduction
+        ? 'Using Railway Redis'
+        : 'Using Local Redis',
+    );
 
-        return {
+    return {
 
-          store:
-            await redisStore(
+      store:
+        await redisStore({
 
-              process.env
-                .NODE_ENV ===
-                'production'
-                && redisUrl
+          host:
+            isProduction
+              ? config.get<string>(
+                  'REDIS_HOST',
+                )
+              : config.get<string>(
+                  'REDIS_HOST',
+                ) || 'redis-ms',
 
-                ? redisUrl
+          port:
+            Number(
+              config.get(
+                'REDIS_PORT',
+              ),
+            ) || 6379,
 
-                : {
+          username:
+            isProduction
+              ? config.get<string>(
+                  'REDIS_USERNAME',
+                ) || 'default'
+              : undefined,
 
-                  host:
-                    config.get<string>(
-                      'REDIS_HOST',
-                    ),
+          password:
+            isProduction
+              ? config.get<string>(
+                  'REDIS_PASSWORD',
+                )
+              : undefined,
 
-                  port:
-                    Number(
-                      config.get(
-                        'REDIS_PORT',
-                      ),
-                    ),
+          maxRetriesPerRequest:
+            3,
 
-                  username:
-                    config.get<string>(
-                      'REDIS_USERNAME',
-                    ) || 'default',
+          lazyConnect:
+            true,
 
-                  password:
-                    config.get<string>(
-                      'REDIS_PASSWORD',
-                    ),
-                },
-            ),
+          enableReadyCheck:
+            false,
+        }),
 
-          ttl: 120,
-        };
-      },
-    }),
+      ttl: 120,
+    };
+  },
+}),
 
     // KAFKA
     // KAFKA
