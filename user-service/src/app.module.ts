@@ -10,9 +10,9 @@ import {
   TypeOrmModule,
 } from '@nestjs/typeorm';
 
-import {
-  KafkaConsumerService,
-} from './kafka/kafka.consumer';
+// import {
+//   KafkaConsumerService,
+// } from './kafka/kafka.consumer';
 
 import {
   PassportModule,
@@ -315,7 +315,6 @@ CacheModule.registerAsync({
   providers: [
     JwtStrategy,
     RedisService,
-    KafkaConsumerService,
   ],
 })
 
