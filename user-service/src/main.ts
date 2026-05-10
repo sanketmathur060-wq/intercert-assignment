@@ -3,11 +3,6 @@ import {
 } from '@nestjs/core';
 
 import {
-  MicroserviceOptions,
-  Transport,
-} from '@nestjs/microservices';
-
-import {
   ConfigService,
 } from '@nestjs/config';
 
@@ -58,30 +53,9 @@ bootstrap() {
       )
     ) || 3001;
 
-  // Kafka
-  app.connectMicroservice
-    <MicroserviceOptions>({
-      transport:
-        Transport.KAFKA,
-
-      options: {
-        client: {
-          brokers: [
-            config.get<string>(
-              'KAFKA_BROKER',
-            )!,
-          ],
-        },
-
-        consumer: {
-          groupId:
-            'user-consumer',
-        },
-      },
-    });
-
-  await app
-    .startAllMicroservices();
+  // REMOVE KAFKA MICROSERVICE
+  // Kafka is handled by
+  // KafkaConsumerService
 
   await app.listen(
     port,
@@ -89,7 +63,7 @@ bootstrap() {
   );
 
   console.log(
-    `User Service Running on Port ${port}`
+    `User Service Running on Port ${port}`,
   );
 }
 
