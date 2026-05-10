@@ -62,6 +62,9 @@ import {
 import {
   RedisService,
 } from './redis/redis.service';
+import {
+  KafkaController,
+} from './kafka/kafka.controller';
 
 @Module({
   imports: [
@@ -306,6 +309,7 @@ CacheModule.registerAsync({
 
   controllers: [
     HealthController,
+    KafkaController,
   ],
 
   providers: [
