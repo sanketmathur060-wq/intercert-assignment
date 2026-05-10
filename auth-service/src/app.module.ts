@@ -244,124 +244,115 @@ import {
     }),
 
     // KAFKA
-    // KAFKA
-ClientsModule.registerAsync([
-  {
-    name: 'KAFKA_SERVICE',
+    ClientsModule.registerAsync([
+      {
+        name: 'KAFKA_SERVICE',
 
-    inject: [ConfigService],
+        inject: [ConfigService],
 
-    useFactory: (
-      config: ConfigService,
-    ) => {
+        useFactory: (
+          config: ConfigService,
+        ) => {
 
-      const isProduction =
-        process.env.NODE_ENV ===
-        'production';
+          const isProduction =
+            process.env.NODE_ENV ===
+            'production';
 
-      const broker =
-        config.get<string>(
-          'KAFKA_BROKER',
-        ) ||
-        'kafka-ms:9092';
+          const broker =
+            config.get<string>(
+              'KAFKA_BROKER',
+            ) ||
+            'kafka-ms:9092';
 
-      const hasKafkaAuth =
-        !!config.get(
-          'KAFKA_USERNAME',
-        ) &&
-        !!config.get(
-          'KAFKA_PASSWORD',
-        );
-
-      console.log(
-        'Kafka Broker:',
-        broker,
-      );
-
-      console.log(
-        'Kafka SSL:',
-        isProduction,
-      );
-
-      console.log(
-        'Kafka SASL:',
-        hasKafkaAuth,
-      );
-
-      const clientConfig: any = {
-
-        clientId:
-          'auth-service',
-
-        brokers: [
-          broker,
-        ],
-
-        retry: {
-          retries: 10,
-          initialRetryTime:
-            300,
-        },
-      };
-
-      // Railway Kafka
-      if (
-        isProduction &&
-        hasKafkaAuth
-      ) {
-
-        clientConfig.ssl =
-          true;
-
-        clientConfig.sasl = {
-
-          mechanism:
-            'plain',
-
-          username:
+          const username =
             config.get<string>(
               'KAFKA_USERNAME',
-            )!,
+            );
 
-          password:
+          const password =
             config.get<string>(
               'KAFKA_PASSWORD',
-            )!,
-        };
-      }
+            );
 
-      return {
+          const kafkaClient: any = {
 
-        transport:
-          Transport.KAFKA,
+            clientId:
+              'auth-service',
 
-        options: {
-
-          client:
-            clientConfig,
-
-          consumer: {
-
-            groupId:
-              'auth-service-group-v1',
-
-            allowAutoTopicCreation:
-              true,
+            brokers: [
+              broker,
+            ],
 
             retry: {
               retries: 10,
             },
-          },
 
-          producer: {
-            allowAutoTopicCreation:
-              true,
-          },
+            connectionTimeout:
+              10000,
+
+            authenticationTimeout:
+              10000,
+          };
+
+          // Railway Kafka
+          if (
+            isProduction &&
+            username &&
+            password
+          ) {
+
+            // IMPORTANT:
+            // Railway uses SASL_PLAINTEXT
+            kafkaClient.ssl =
+              false;
+
+            kafkaClient.sasl = {
+              mechanism:
+                'plain',
+
+              username,
+              password,
+            };
+          }
+
+          console.log(
+            'Kafka Config:',
+            {
+              broker,
+              ssl:
+                kafkaClient.ssl,
+              sasl:
+                !!kafkaClient.sasl,
+            },
+          );
+
+          return {
+
+            transport:
+              Transport.KAFKA,
+
+            options: {
+
+              client:
+                kafkaClient,
+
+              consumer: {
+                groupId:
+                  'auth-service-group-v1',
+
+                allowAutoTopicCreation:
+                  true,
+              },
+
+              producer: {
+                allowAutoTopicCreation:
+                  true,
+              },
+            },
+          };
         },
-      };
-    },
-  },
-]),
+      },
+    ]),
 
     ThrottlerModule
       .forRoot([
