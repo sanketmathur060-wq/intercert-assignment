@@ -168,75 +168,57 @@ import {
       }),
 
     // REDIS CACHE
-    CacheModule
-      .registerAsync({
+CacheModule.registerAsync({
+  isGlobal: true,
 
-        isGlobal:
-          true,
+  inject: [ConfigService],
 
-        inject: [
-          ConfigService,
-        ],
+  useFactory: async (
+    config: ConfigService,
+  ) => {
 
-        useFactory:
-          async (
-            config:
-              ConfigService,
-          ) => {
+    console.log(
+      'REDIS HOST:',
+      config.get('REDIS_HOST'),
+    );
 
-            const redisConfig:
-              any = {
+    console.log(
+      'REDIS USERNAME:',
+      config.get('REDIS_USERNAME'),
+    );
 
-              host:
-                config.get<string>(
-                  'REDIS_HOST',
-                ) ||
-                'redis-ms',
+    console.log(
+      'REDIS PASSWORD EXISTS:',
+      !!config.get('REDIS_PASSWORD'),
+    );
 
-              port:
-                Number(
-                  config.get(
-                    'REDIS_PORT',
-                  ) || 6379,
-                ),
-            };
+    return {
+      store: await redisStore({
+        host: config.get<string>(
+          'REDIS_HOST',
+        )!,
 
-            // Railway Redis Auth
-            if (
-              config.get(
-                'REDIS_PASSWORD',
-              )
-            ) {
+        port: Number(
+          config.get(
+            'REDIS_PORT',
+          ),
+        ),
 
-              redisConfig.username =
-                config.get<string>(
-                  'REDIS_USERNAME',
-                ) ||
-                'default';
+        username:
+          config.get<string>(
+            'REDIS_USERNAME',
+          ) || 'default',
 
-              redisConfig.password =
-                config.get<string>(
-                  'REDIS_PASSWORD',
-                );
-            }
-
-            console.log(
-              'REDIS HOST:',
-              redisConfig.host,
-            );
-
-            return {
-
-              store:
-                await redisStore(
-                  redisConfig,
-                ),
-
-              ttl:
-                120,
-            };
-          },
+        password:
+          config.get<string>(
+            'REDIS_PASSWORD',
+          ),
       }),
+
+      ttl: 120,
+    };
+  },
+}),
 
     // KAFKA
     ClientsModule
