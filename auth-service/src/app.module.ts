@@ -175,76 +175,66 @@ import {
 
     // REDIS CACHE
     CacheModule.registerAsync({
-  isGlobal: true,
+      isGlobal: true,
 
-  inject: [ConfigService],
+      inject: [ConfigService],
 
-  useFactory: async (
-    config: ConfigService,
-  ) => {
+      useFactory: async (
+        config: ConfigService,
+      ) => {
 
-    const redisUrl =
-      config.get<string>(
-        'REDIS_URL',
-      );
+        const redisUrl =
+          config.get<string>(
+            'REDIS_URL',
+          );
 
-    // Production (Railway)
-    if (
-      process.env.NODE_ENV ===
-      'production' &&
-      redisUrl
-    ) {
+        console.log(
+          'Using Redis URL:',
+          !!redisUrl,
+        );
 
-      console.log(
-        'Using Railway Redis URL',
-      );
+        return {
 
-      return {
-        store:
-          await redisStore({
-            url:
-              redisUrl,
-          }),
+          store:
+            await redisStore(
 
-        ttl: 120,
-      };
-    }
+              process.env
+                .NODE_ENV ===
+                'production'
+                && redisUrl
 
-    // Local Docker
-    console.log(
-      'Using Local Redis',
-    );
+                ? redisUrl
 
-    return {
-      store:
-        await redisStore({
-          host:
-            config.get<string>(
-              'REDIS_HOST',
+                : {
+
+                  host:
+                    config.get<string>(
+                      'REDIS_HOST',
+                    ),
+
+                  port:
+                    Number(
+                      config.get(
+                        'REDIS_PORT',
+                      ),
+                    ),
+
+                  username:
+                    config.get<string>(
+                      'REDIS_USERNAME',
+                    ) || 'default',
+
+                  password:
+                    config.get<string>(
+                      'REDIS_PASSWORD',
+                    ),
+                },
             ),
 
-          port:
-            Number(
-              config.get(
-                'REDIS_PORT',
-              ),
-            ),
-
-          password:
-            config.get<string>(
-              'REDIS_PASSWORD',
-            ),
-
-          username:
-            config.get<string>(
-              'REDIS_USERNAME',
-            ) || 'default',
-        }),
-
-        ttl: 120,
-      };
-  },
-}),
+          ttl: 120,
+        };
+      },
+    }),
 
     // KAFKA
     // KAFKA
