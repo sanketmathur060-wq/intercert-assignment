@@ -175,75 +175,74 @@ import {
 
     // REDIS CACHE
     CacheModule.registerAsync({
-  isGlobal: true,
+      isGlobal: true,
 
-  inject: [ConfigService],
+      inject: [ConfigService],
 
-  useFactory: async (
-    config: ConfigService,
-  ) => {
+      useFactory: async (
+        config: ConfigService,
+      ) => {
 
-    const isProduction =
-      process.env.NODE_ENV ===
-      'production';
+        const isProduction =
+          process.env.NODE_ENV ===
+          'production';
 
-    console.log(
-      isProduction
-        ? 'Using Railway Redis'
-        : 'Using Local Redis',
-    );
+        console.log(
+          isProduction
+            ? 'Using Railway Redis'
+            : 'Using Local Redis',
+        );
 
-    return {
+        return {
 
-      store:
-        await redisStore({
+          store:
+            await redisStore({
 
-          host:
-            isProduction
-              ? config.get<string>(
-                  'REDIS_HOST',
-                )
-              : config.get<string>(
-                  'REDIS_HOST',
-                ) || 'redis-ms',
+              host:
+                isProduction
+                  ? config.get<string>(
+                    'REDIS_HOST',
+                  )
+                  : config.get<string>(
+                    'REDIS_HOST',
+                  ) || 'redis-ms',
 
-          port:
-            Number(
-              config.get(
-                'REDIS_PORT',
-              ),
-            ) || 6379,
+              port:
+                Number(
+                  config.get(
+                    'REDIS_PORT',
+                  ),
+                ) || 6379,
 
-          username:
-            isProduction
-              ? config.get<string>(
-                  'REDIS_USERNAME',
-                ) || 'default'
-              : undefined,
+              username:
+                isProduction
+                  ? config.get<string>(
+                    'REDIS_USERNAME',
+                  ) || 'default'
+                  : undefined,
 
-          password:
-            isProduction
-              ? config.get<string>(
-                  'REDIS_PASSWORD',
-                )
-              : undefined,
+              password:
+                isProduction
+                  ? config.get<string>(
+                    'REDIS_PASSWORD',
+                  )
+                  : undefined,
 
-          maxRetriesPerRequest:
-            3,
+              maxRetriesPerRequest:
+                3,
 
-          lazyConnect:
-            true,
+              lazyConnect:
+                true,
 
-          enableReadyCheck:
-            false,
-        }),
+              enableReadyCheck:
+                false,
+            }),
 
-      ttl: 120,
-    };
-  },
-}),
+          ttl: 120,
+        };
+      },
+    }),
 
-    // KAFKA
     // KAFKA
     ClientsModule.registerAsync([
       {
@@ -255,74 +254,59 @@ import {
           config: ConfigService,
         ) => {
 
-          const broker =
-            config.get<string>(
-              'KAFKA_BROKER',
-            );
-
-          const kafkaClient: any = {
-            brokers: [
-              broker ||
-              'kafka-ms:9092',
-            ],
-
-            clientId:
-              'auth-service',
-
-            ssl: true,
-          };
-
-          // Railway Kafka Auth
-          if (
-            config.get(
-              'KAFKA_USERNAME',
-            ) &&
-            config.get(
-              'KAFKA_PASSWORD',
-            )
-          ) {
-
-            kafkaClient.sasl = {
-              mechanism:
-                'plain',
-
-              username:
-                config.get<string>(
-                  'KAFKA_USERNAME',
-                )!,
-
-              password:
-                config.get<string>(
-                  'KAFKA_PASSWORD',
-                )!,
-            };
-          }
-
-          console.log(
-            'Kafka Broker:',
-            kafkaClient
-              .brokers[0],
-          );
-
-          console.log(
-            'Kafka Username:',
-            config.get(
-              'KAFKA_USERNAME',
-            ),
-          );
+          const isProduction =
+            process.env.NODE_ENV ===
+            'production';
 
           return {
+
             transport:
               Transport.KAFKA,
 
             options: {
 
-              client:
-                kafkaClient,
+              client: {
+
+                clientId:
+                  'auth-service',
+
+                brokers: [
+                  config.get<string>(
+                    'KAFKA_BROKER',
+                  ) ||
+                  'kafka-ms:9092',
+                ],
+
+                ssl:
+                  isProduction,
+
+                sasl:
+                  isProduction
+                    ? {
+                      mechanism:
+                        'plain',
+
+                      username:
+                        config.get<string>(
+                          'KAFKA_USERNAME',
+                        )!,
+
+                      password:
+                        config.get<string>(
+                          'KAFKA_PASSWORD',
+                        )!,
+                    }
+                    : undefined,
+
+                retry: {
+                  retries: 8,
+                },
+              },
 
               consumer: {
+
                 groupId:
-                  'auth-service-group-v1',
+                  'auth-service-group',
 
                 allowAutoTopicCreation:
                   true,
