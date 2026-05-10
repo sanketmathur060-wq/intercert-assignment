@@ -19,15 +19,12 @@ async function
 bootstrap() {
 
   const app =
-    await NestFactory
-      .create(
-        AppModule,
-      );
+    await NestFactory.create(
+      AppModule,
+    );
 
-  // CORS
   app.enableCors({
-    origin:
-      '*',
+    origin: '*',
 
     credentials:
       true,
@@ -57,67 +54,41 @@ bootstrap() {
         'PORT',
       ),
     ) || 3001;
-console.log({
-  broker: config.get('KAFKA_BROKER'),
-  username: config.get('KAFKA_USERNAME'),
-  passwordLength:
-    config.get('KAFKA_PASSWORD')?.length,
-});
+
   // KAFKA CONSUMER
-  app.connectMicroservice<
-  MicroserviceOptions
->({
-  transport:
-    Transport.KAFKA,
+  app.connectMicroservice
+    <MicroserviceOptions>({
+      transport:
+        Transport.KAFKA,
 
-  options: {
+      options: {
 
-    client: {
+        client: {
 
-      clientId:
-        'user-service',
+          clientId:
+            'user-service',
 
-      brokers: [
-        config.get<string>(
-          'KAFKA_BROKER',
-        )!,
-      ],
+          brokers: [
+            config.get<string>(
+              'KAFKA_BROKER',
+            )!,
+          ],
+        },
 
-      ssl: false,
+        consumer: {
 
-      sasl:
-        config.get(
-          'KAFKA_USERNAME',
-        ) &&
-        config.get(
-          'KAFKA_PASSWORD',
-        )
-          ? {
-              mechanism:
-                'plain',
+          groupId:
+            'user-consumer',
+        },
+      },
+    });
 
-              username:
-                config.get<string>(
-                  'KAFKA_USERNAME',
-                )!,
-
-              password:
-                config.get<string>(
-                  'KAFKA_PASSWORD',
-                )!,
-            }
-          : undefined,
-    },
-
-    consumer: {
-
-      groupId:
-        'user-consumer',
-    },
-  },
-});
   await app
     .startAllMicroservices();
+
+  console.log(
+    'Kafka Consumer Connected',
+  );
 
   await app.listen(
     port,
