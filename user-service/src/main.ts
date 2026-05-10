@@ -57,7 +57,12 @@ bootstrap() {
         'PORT',
       ),
     ) || 3001;
-
+console.log({
+  broker: config.get('KAFKA_BROKER'),
+  username: config.get('KAFKA_USERNAME'),
+  passwordLength:
+    config.get('KAFKA_PASSWORD')?.length,
+});
   // KAFKA CONSUMER
   app.connectMicroservice
     <MicroserviceOptions>({
