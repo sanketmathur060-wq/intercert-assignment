@@ -1,253 +1,257 @@
-// import {
-//   Injectable,
-//   OnModuleInit,
-//   OnModuleDestroy,
-// } from '@nestjs/common';
+import {
+    Injectable,
+    OnModuleInit,
+    OnModuleDestroy,
+} from '@nestjs/common';
 
-// import {
-//   ConfigService,
-// } from '@nestjs/config';
+import {
+    ConfigService,
+} from '@nestjs/config';
 
-// import {
-//   Kafka,
-//   Consumer,
-// } from 'kafkajs';
+import {
+    Kafka,
+    Consumer,
+} from 'kafkajs';
 
-// import {
-//   Repository,
-// } from 'typeorm';
+import {
+    Repository,
+} from 'typeorm';
 
-// import {
-//   InjectRepository,
-// } from '@nestjs/typeorm';
+import {
+    InjectRepository,
+} from '@nestjs/typeorm';
 
-// import * as fs from 'fs';
+import * as fs from 'fs';
 
-// import {
-//   Profile,
-// } from '../user/entities/profile.entity';
+import {
+    Profile,
+} from '../user/entities/profile.entity';
 
-// @Injectable()
-// export class KafkaConsumerService
-//   implements
-//     OnModuleInit,
-//     OnModuleDestroy {
+@Injectable()
+export class KafkaConsumerService
+    implements
+    OnModuleInit,
+    OnModuleDestroy {
 
-//   private consumer:
-//     Consumer;
+    private consumer:
+        Consumer;
 
-//   constructor(
-//     private config:
-//       ConfigService,
+    constructor(
+        private config:
+            ConfigService,
 
-//     @InjectRepository(Profile)
-//     private profileRepo:
-//       Repository<Profile>,
-//   ) {
+        @InjectRepository(Profile)
+        private profileRepo:
+            Repository<Profile>,
+    ) {
 
-//     const broker =
-//       this.config.get<string>(
-//         'KAFKA_BROKER',
-//       ) ||
-//       'kafka-ms:9092';
+        const broker =
+            this.config.get<string>(
+                'KAFKA_BROKER',
+            ) ||
+            'kafka-ms:9092';
 
-//     const username =
-//       this.config.get<string>(
-//         'KAFKA_USERNAME',
-//       );
+        const username =
+            this.config.get<string>(
+                'KAFKA_USERNAME',
+            );
 
-//     const password =
-//       this.config.get<string>(
-//         'KAFKA_PASSWORD',
-//       );
+        const password =
+            this.config.get<string>(
+                'KAFKA_PASSWORD',
+            );
 
-//     const isRailway =
-//       !!username &&
-//       !!password;
+        const isRailway =
+            !!username &&
+            !!password;
 
-//     console.log({
-//       broker,
-//       username,
-//       passwordLength:
-//         password?.length,
-//     });
+        console.log({
+            broker,
+            username,
+            passwordLength:
+                password?.length,
+        });
 
-//     const kafka =
-//       new Kafka({
+        const kafka =
+            new Kafka({
 
-//         clientId:
-//           'user-service',
+                clientId:
+                    'user-service',
 
-//         brokers: [
-//           broker,
-//         ],
+                brokers: [
+                    broker,
+                ],
 
-//         ssl:
-//           false,
+                ssl: false,
 
-//         sasl:
-//           isRailway
-//             ? {
-//                 mechanism:
-//                   'plain',
+                sasl:
+                    isRailway
+                        ? {
+                            mechanism:
+                                'plain',
 
-//                 username,
-//                 password,
-//               }
-//             : undefined,
+                            username,
+                            password,
+                        }
+                        : undefined,
 
-//         retry: {
-//           retries: 8,
-//         },
-//       });
+                retry: {
+                    retries: 8,
+                },
+            });
 
-//     this.consumer =
-//       kafka.consumer({
-//         groupId:
-//           'user-service-group',
-//       });
+        this.consumer =
+            kafka.consumer({
+                groupId:
+                    'user-consumer',
+            });
 
-//     console.log(
-//       'Kafka Broker:',
-//       broker,
-//     );
+        console.log(
+            'Kafka Broker:',
+            broker,
+        );
 
-//     console.log(
-//       'Using Railway Kafka:',
-//       isRailway,
-//     );
-//   }
+        console.log(
+            'Using Railway Kafka:',
+            isRailway,
+        );
+    }
 
-//   async onModuleInit() {
+    async onModuleInit() {
 
-//     try {
+        try {
 
-//       await this.consumer
-//         .connect();
+            await this.consumer
+                .connect();
 
-//       console.log(
-//         'Kafka Consumer Connected',
-//       );
+            console.log(
+                'Kafka Consumer Connected',
+            );
 
-//       await this.consumer.subscribe({
-//         topic:
-//           'user-created',
+            await this.consumer.subscribe({
+                topic:
+                    'user-created',
 
-//         fromBeginning:
-//           false,
-//       });
+                fromBeginning:
+                    false,
+            });
 
-//       await this.consumer.subscribe({
-//         topic:
-//           'login-events',
+            await this.consumer.subscribe({
+                topic:
+                    'login-events',
 
-//         fromBeginning:
-//           false,
-//       });
+                fromBeginning:
+                    false,
+            });
 
-//       await this.consumer.run({
+            await this.consumer.run({
 
-//         eachMessage:
-//           async ({
-//             topic,
-//             message,
-//           }) => {
+                eachMessage:
+                    async ({
+                        topic,
+                        message,
+                    }) => {
 
-//             const value =
-//               message.value?.toString();
+                        const value =
+                            message.value?.toString();
 
-//             if (!value)
-//               return;
+                        if (!value)
+                            return;
 
-//             const data =
-//               JSON.parse(
-//                 value,
-//               );
+                        const data =
+                            JSON.parse(
+                                value,
+                            );
 
-//             // LOGIN EVENTS
-//             if (
-//               topic ===
-//               'login-events'
-//             ) {
+                        // LOGIN EVENTS
+                        if (
+                            topic ===
+                            'login-events'
+                        ) {
 
-//               console.log(
-//                 'LOGIN EVENT:',
-//                 data,
-//               );
+                            console.log(
+                                'LOGIN EVENT:',
+                                data,
+                            );
 
-//               fs.appendFileSync(
-//                 './login-events.log',
-//                 JSON.stringify(
-//                   data,
-//                 ) + '\n',
-//               );
-//             }
+                            fs.appendFileSync(
+                                './login-events.log',
+                                JSON.stringify(
+                                    data,
+                                ) + '\n',
+                            );
+                        }
 
-//             // USER CREATED
-//             if (
-//               topic ===
-//               'user-created'
-//             ) {
+                        // USER CREATED
+                        if (
+                            topic ===
+                            'user-created'
+                        ) {
 
-//               console.log(
-//                 'USER CREATED:',
-//                 data,
-//               );
+                            console.log(
+                                'USER CREATED EVENT:',
+                                data,
+                            );
 
-//               const existingProfile =
-//                 await this.profileRepo.findOne({
-//                   where: {
-//                     userId:
-//                       data.id,
-//                   },
-//                 });
+                            const user =
+                                typeof data === 'string'
+                                    ? JSON.parse(data)
+                                    : data;
 
-//               if (
-//                 existingProfile
-//               ) {
-//                 return;
-//               }
+                            const existingProfile =
+                                await this.profileRepo.findOne({
+                                    where: {
+                                        userId:
+                                            user.id,
+                                    },
+                                });
 
-//               const profile =
-//                 this.profileRepo.create({
-//                   userId:
-//                     data.id,
+                            if (
+                                existingProfile
+                            ) {
+                                return;
+                            }
 
-//                   name:
-//                     data.name,
+                            const profile =
+                                this.profileRepo.create({
+                                    userId:
+                                        user.id,
 
-//                   email:
-//                     data.email,
+                                    name:
+                                        user.name,
 
-//                   phone:
-//                     data.phone,
-//                 });
+                                    email:
+                                        user.email,
 
-//               await this.profileRepo.save(
-//                 profile,
-//               );
+                                    phone:
+                                        user.phone,
+                                });
 
-//               console.log(
-//                 'PROFILE CREATED',
-//               );
-//             }
-//           },
-//       });
+                            await this.profileRepo.save(
+                                profile,
+                            );
 
-//     } catch (
-//       error
-//     ) {
+                            console.log(
+                                'PROFILE CREATED',
+                            );
+                        }
+                    },
+            });
 
-//       console.error(
-//         'Kafka Consumer Error:',
-//         error,
-//       );
-//     }
-//   }
+        } catch (
+        error
+        ) {
 
-//   async onModuleDestroy() {
+            console.error(
+                'Kafka Consumer Connection Error:',
+                error.message,
+            );
+        }
+    }
 
-//     await this.consumer
-//       .disconnect();
-//   }
-// }
+    async onModuleDestroy() {
+
+        await this.consumer
+            .disconnect();
+    }
+}

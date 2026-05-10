@@ -62,9 +62,10 @@ import {
 import {
   RedisService,
 } from './redis/redis.service';
+
 import {
-  KafkaController,
-} from './kafka/kafka.controller';
+  KafkaConsumerService,
+} from './kafka/kafka.consumer';
 
 @Module({
   imports: [
@@ -175,9 +176,9 @@ import {
               ssl:
                 isCloudDb
                   ? {
-                      rejectUnauthorized:
-                        false,
-                    }
+                    rejectUnauthorized:
+                      false,
+                  }
                   : false,
 
               entities: [
@@ -194,74 +195,74 @@ import {
       }),
 
     // REDIS CACHE
-CacheModule.registerAsync({
-  isGlobal: true,
+    CacheModule.registerAsync({
+      isGlobal: true,
 
-  inject: [ConfigService],
+      inject: [ConfigService],
 
-  useFactory: async (
-    config: ConfigService,
-  ) => {
+      useFactory: async (
+        config: ConfigService,
+      ) => {
 
-    const isProduction =
-      process.env.NODE_ENV ===
-      'production';
+        const isProduction =
+          process.env.NODE_ENV ===
+          'production';
 
-    console.log(
-      isProduction
-        ? 'Using Railway Redis'
-        : 'Using Local Redis',
-    );
+        console.log(
+          isProduction
+            ? 'Using Railway Redis'
+            : 'Using Local Redis',
+        );
 
-    return {
+        return {
 
-      store:
-        await redisStore({
+          store:
+            await redisStore({
 
-          host:
-            isProduction
-              ? config.get<string>(
-                  'REDIS_HOST',
-                )
-              : config.get<string>(
-                  'REDIS_HOST',
-                ) || 'redis-ms',
+              host:
+                isProduction
+                  ? config.get<string>(
+                    'REDIS_HOST',
+                  )
+                  : config.get<string>(
+                    'REDIS_HOST',
+                  ) || 'redis-ms',
 
-          port:
-            Number(
-              config.get(
-                'REDIS_PORT',
-              ),
-            ) || 6379,
+              port:
+                Number(
+                  config.get(
+                    'REDIS_PORT',
+                  ),
+                ) || 6379,
 
-          username:
-            isProduction
-              ? config.get<string>(
-                  'REDIS_USERNAME',
-                ) || 'default'
-              : undefined,
+              username:
+                isProduction
+                  ? config.get<string>(
+                    'REDIS_USERNAME',
+                  ) || 'default'
+                  : undefined,
 
-          password:
-            isProduction
-              ? config.get<string>(
-                  'REDIS_PASSWORD',
-                )
-              : undefined,
+              password:
+                isProduction
+                  ? config.get<string>(
+                    'REDIS_PASSWORD',
+                  )
+                  : undefined,
 
-          maxRetriesPerRequest:
-            3,
+              maxRetriesPerRequest:
+                3,
 
-          lazyConnect:
-            true,
+              lazyConnect:
+                true,
 
-          enableReadyCheck:
-            false,
-        }),
+              enableReadyCheck:
+                false,
+            }),
 
-      ttl: 120,
-    };
-  },
-}),
+          ttl: 120,
+        };
+      },
+    }),
 
     PassportModule,
 
@@ -309,13 +310,13 @@ CacheModule.registerAsync({
 
   controllers: [
     HealthController,
-    KafkaController,
   ],
 
   providers: [
     JwtStrategy,
     RedisService,
+    KafkaConsumerService,
   ],
 })
 
-export class AppModule {}
+export class AppModule { }
