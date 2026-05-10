@@ -80,38 +80,38 @@ import {
 
             const dbHost =
               config.get<string>(
-                'DB_HOST'
+                'DB_HOST',
               );
 
             const isCloudDb =
               dbHost?.includes(
-                'neon.tech'
+                'neon.tech',
               ) ||
               dbHost?.includes(
-                'amazonaws.com'
+                'amazonaws.com',
               ) ||
               dbHost?.includes(
-                'supabase.co'
+                'supabase.co',
               ) ||
               dbHost?.includes(
-                'railway.app'
+                'railway.app',
               );
 
             console.log(
               'CONNECTED DB:',
               config.get(
-                'DB_NAME'
-              )
+                'DB_NAME',
+              ),
             );
 
             console.log(
               'DB HOST:',
-              dbHost
+              dbHost,
             );
 
             console.log(
               'IS CLOUD DB:',
-              isCloudDb
+              isCloudDb,
             );
 
             return {
@@ -125,26 +125,25 @@ import {
               port:
                 Number(
                   config.get(
-                    'DB_PORT'
-                  )
+                    'DB_PORT',
+                  ),
                 ),
 
               username:
                 config.get<string>(
-                  'DB_USERNAME'
+                  'DB_USERNAME',
                 )!,
 
               password:
                 config.get<string>(
-                  'DB_PASSWORD'
+                  'DB_PASSWORD',
                 )!,
 
               database:
                 config.get<string>(
-                  'DB_NAME'
+                  'DB_NAME',
                 )!,
 
-              // SSL for cloud DB
               ssl:
                 isCloudDb
                   ? {
@@ -166,74 +165,90 @@ import {
           },
       }),
 
-    CacheModule
-      .registerAsync({
-        isGlobal:
-          true,
+    // Redis Optional
+    ...(
+      process.env
+        .REDIS_HOST
+        ? [
+            CacheModule
+              .registerAsync({
+                isGlobal:
+                  true,
 
-        inject: [
-          ConfigService,
-        ],
+                inject: [
+                  ConfigService,
+                ],
 
-        useFactory:
-          async (
-            config:
-              ConfigService,
-          ) => ({
+                useFactory:
+                  async (
+                    config:
+                      ConfigService,
+                  ) => ({
 
-            store:
-              await redisStore({
-                host:
-                  config.get<string>(
-                    'REDIS_HOST'
-                  )!,
+                    store:
+                      await redisStore({
+                        host:
+                          config.get<string>(
+                            'REDIS_HOST',
+                          )!,
 
-                port:
-                  Number(
-                    config.get(
-                      'REDIS_PORT'
-                    )
-                  ),
+                        port:
+                          Number(
+                            config.get(
+                              'REDIS_PORT',
+                            ),
+                          ),
+                      }),
+                  }),
               }),
-          }),
-      }),
+          ]
+        : []
+    ),
 
-    ClientsModule
-      .registerAsync([
-        {
-          name:
-            'KAFKA_SERVICE',
+    // Kafka Optional
+    ...(
+      process.env
+        .KAFKA_BROKER
+        ? [
+            ClientsModule
+              .registerAsync([
+                {
+                  name:
+                    'KAFKA_SERVICE',
 
-          inject: [
-            ConfigService,
-          ],
-
-          useFactory:
-            (
-              config:
-                ConfigService,
-            ) => ({
-
-              transport:
-                Transport.KAFKA,
-
-              options: {
-                client: {
-                  brokers: [
-                    config.get<string>(
-                      'KAFKA_BROKER'
-                    )!,
+                  inject: [
+                    ConfigService,
                   ],
-                },
 
-                consumer: {
-                  groupId:
-                    'auth-consumer',
+                  useFactory:
+                    (
+                      config:
+                        ConfigService,
+                    ) => ({
+
+                      transport:
+                        Transport.KAFKA,
+
+                      options: {
+                        client: {
+                          brokers: [
+                            config.get<string>(
+                              'KAFKA_BROKER',
+                            )!,
+                          ],
+                        },
+
+                        consumer: {
+                          groupId:
+                            'auth-consumer',
+                        },
+                      },
+                    }),
                 },
-              },
-            }),
-        },
-      ]),
+              ]),
+          ]
+        : []
+    ),
 
     ThrottlerModule
       .forRoot([
@@ -261,7 +276,7 @@ import {
           ) => ({
             secret:
               config.get<string>(
-                'JWT_SECRET'
+                'JWT_SECRET',
               )!,
 
             signOptions: {
