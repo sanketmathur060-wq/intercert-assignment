@@ -244,111 +244,123 @@ import {
     }),
 
     // KAFKA
-    // KAFKA
-    ClientsModule.registerAsync([
-      {
-        name: 'KAFKA_SERVICE',
+ClientsModule.registerAsync([
+  {
+    name: 'KAFKA_SERVICE',
 
-        inject: [ConfigService],
+    inject: [ConfigService],
 
-        useFactory: (
-          config: ConfigService,
-        ) => {
+    useFactory: (
+      config: ConfigService,
+    ) => {
 
-          const isProduction =
-            process.env.NODE_ENV ===
-            'production';
+      const broker =
+        config.get<string>(
+          'KAFKA_BROKER',
+        ) ||
+        'kafka-ms:9092';
 
-          const broker =
-            config.get<string>(
-              'KAFKA_BROKER',
-            ) ||
-            'kafka-ms:9092';
+      const username =
+        config.get<string>(
+          'KAFKA_USERNAME',
+        );
 
-          const username =
-            config.get<string>(
-              'KAFKA_USERNAME',
-            );
+      const password =
+        config.get<string>(
+          'KAFKA_PASSWORD',
+        );
 
-          const password =
-            config.get<string>(
-              'KAFKA_PASSWORD',
-            );
+      const isRailwayKafka =
+        !!username &&
+        !!password;
 
-          const kafkaClient: any = {
+      console.log(
+        'Kafka Broker:',
+        broker,
+      );
 
-            clientId:
-              'auth-service',
+      console.log(
+        'Kafka Auth:',
+        isRailwayKafka
+          ? 'Railway SASL'
+          : 'Local Docker',
+      );
 
-            brokers: [
-              broker,
-            ],
+      const kafkaClient: any = {
 
-            retry: {
-              retries: 10,
-            },
+        clientId:
+          'auth-service',
 
-            connectionTimeout:
-              10000,
+        brokers: [
+          broker,
+        ],
 
-            authenticationTimeout:
-              10000,
-          };
-
-          // Railway Kafka
-          if (
-            isProduction &&
-            username &&
-            password
-          ) {
-
-            // Railway uses
-            // SASL_PLAINTEXT
-            kafkaClient.ssl =
-              false;
-
-            kafkaClient.sasl = {
-              mechanism:
-                'plain',
-
-              username,
-              password,
-            };
-          }
-
-          console.log(
-            'Kafka Config:',
-            {
-              broker,
-              ssl:
-                kafkaClient.ssl,
-              sasl:
-                !!kafkaClient.sasl,
-            },
-          );
-
-          return {
-
-            transport:
-              Transport.KAFKA,
-
-            options: {
-
-              client:
-                kafkaClient,
-
-              // ONLY PRODUCER
-              // auth-service should
-              // not consume
-              producer: {
-                allowAutoTopicCreation:
-                  true,
-              },
-            },
-          };
+        retry: {
+          retries: 10,
         },
-      },
-    ]),
+
+        connectionTimeout:
+          30000,
+
+        authenticationTimeout:
+          30000,
+      };
+
+      // Railway Kafka
+      if (
+        isRailwayKafka
+      ) {
+
+        kafkaClient.ssl =
+          false;
+
+        kafkaClient.sasl =
+          {
+            mechanism:
+              'plain',
+
+            username,
+
+            password,
+          };
+      }
+
+      return {
+
+        transport:
+          Transport.KAFKA,
+
+        options: {
+
+          client:
+            kafkaClient,
+
+          consumer: {
+
+            groupId:
+              isRailwayKafka
+                ? `auth-service-${Date.now()}`
+                : 'auth-service-local',
+
+            sessionTimeout:
+              30000,
+
+            heartbeatInterval:
+              3000,
+
+            allowAutoTopicCreation:
+              true,
+          },
+
+          producer: {
+            allowAutoTopicCreation:
+              true,
+          },
+        },
+      };
+    },
+  },
+]),
 
     ThrottlerModule
       .forRoot([
