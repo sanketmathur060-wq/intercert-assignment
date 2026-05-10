@@ -244,6 +244,7 @@ import {
     }),
 
     // KAFKA
+    // KAFKA
     ClientsModule.registerAsync([
       {
         name: 'KAFKA_SERVICE',
@@ -301,8 +302,8 @@ import {
             password
           ) {
 
-            // IMPORTANT:
-            // Railway uses SASL_PLAINTEXT
+            // Railway uses
+            // SASL_PLAINTEXT
             kafkaClient.ssl =
               false;
 
@@ -336,14 +337,9 @@ import {
               client:
                 kafkaClient,
 
-              consumer: {
-                groupId:
-                  'auth-service-group-v1',
-
-                allowAutoTopicCreation:
-                  true,
-              },
-
+              // ONLY PRODUCER
+              // auth-service should
+              // not consume
               producer: {
                 allowAutoTopicCreation:
                   true,
