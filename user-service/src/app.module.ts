@@ -194,77 +194,177 @@ import {
           },
       }),
 
-    CacheModule
-      .registerAsync({
-        isGlobal:
-          true,
+    // REDIS CACHE
+CacheModule.registerAsync({
+  isGlobal: true,
 
-        inject: [
+  inject: [ConfigService],
+
+  useFactory: async (
+    config: ConfigService,
+  ) => {
+
+    const isProduction =
+      process.env.NODE_ENV ===
+      'production';
+
+    console.log(
+      isProduction
+        ? 'Using Railway Redis'
+        : 'Using Local Redis',
+    );
+
+    return {
+
+      store:
+        await redisStore({
+
+          host:
+            isProduction
+              ? config.get<string>(
+                  'REDIS_HOST',
+                )
+              : config.get<string>(
+                  'REDIS_HOST',
+                ) || 'redis-ms',
+
+          port:
+            Number(
+              config.get(
+                'REDIS_PORT',
+              ),
+            ) || 6379,
+
+          username:
+            isProduction
+              ? config.get<string>(
+                  'REDIS_USERNAME',
+                ) || 'default'
+              : undefined,
+
+          password:
+            isProduction
+              ? config.get<string>(
+                  'REDIS_PASSWORD',
+                )
+              : undefined,
+
+          maxRetriesPerRequest:
+            3,
+
+          lazyConnect:
+            true,
+
+          enableReadyCheck:
+            false,
+        }),
+
+      ttl: 120,
+    };
+  },
+}),
+
+    ClientsModule.registerAsync([
+  {
+    name:
+      'KAFKA_SERVICE',
+
+    inject: [
+      ConfigService,
+    ],
+
+    useFactory:
+      (
+        config:
           ConfigService,
-        ],
+      ) => {
 
-        useFactory:
-          async (
-            config:
-              ConfigService,
-          ) => ({
+        const broker =
+          config.get<string>(
+            'KAFKA_BROKER',
+          ) ||
+          'kafka-ms:9092';
 
-            store:
-              await redisStore({
-                host:
-                  config.get<string>(
-                    'REDIS_HOST'
-                  )!,
+        const username =
+          config.get<string>(
+            'KAFKA_USERNAME',
+          ) || '';
 
-                port:
-                  Number(
-                    config.get(
-                      'REDIS_PORT'
-                    )
-                  ),
-              }),
+        const password =
+          config.get<string>(
+            'KAFKA_PASSWORD',
+          ) || '';
 
-            ttl:
-              120,
-          }),
-      }),
+        const isRailway =
+          !!username &&
+          !!password;
 
-    ClientsModule
-      .registerAsync([
-        {
-          name:
-            'KAFKA_SERVICE',
+        console.log({
+          broker,
+          username,
+          passwordLength:
+            password?.length,
+        });
 
-          inject: [
-            ConfigService,
-          ],
+        return {
 
-          useFactory:
-            (
-              config:
-                ConfigService,
-            ) => ({
+          transport:
+            Transport.KAFKA,
 
-              transport:
-                Transport.KAFKA,
+          options: {
 
-              options: {
-                client: {
-                  brokers: [
-                    config.get<string>(
-                      'KAFKA_BROKER'
-                    )!,
-                  ],
-                },
+            client: {
 
-                consumer: {
-                  groupId:
-                    'user-consumer',
-                },
+              clientId:
+                'user-service',
+
+              brokers: [
+                broker,
+              ],
+
+              ssl: false,
+
+              sasl:
+                isRailway
+                  ? {
+                      mechanism:
+                        'plain',
+
+                      username,
+                      password,
+                    }
+                  : undefined,
+
+              retry: {
+                retries:
+                  8,
               },
-            }),
-        },
-      ]),
+            },
+
+            consumer: {
+
+              groupId:
+                'user-service-group',
+
+              allowAutoTopicCreation:
+                true,
+            },
+
+            subscribe: {
+              fromBeginning:
+                false,
+            },
+
+            producer: {
+
+              allowAutoTopicCreation:
+                true,
+            },
+          },
+        };
+      },
+  },
+]),
 
     PassportModule,
 

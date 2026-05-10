@@ -28,6 +28,17 @@ export class RedisService {
         new Redis(
           process.env
             .REDIS_URL,
+          {
+
+            maxRetriesPerRequest:
+              3,
+
+            lazyConnect:
+              true,
+
+            enableReadyCheck:
+              false,
+          },
         );
     }
 
@@ -43,22 +54,33 @@ export class RedisService {
 
           host:
             process.env
-              .REDIS_HOST,
+              .REDIS_HOST ||
+            'redis-ms',
 
           port:
             Number(
               process.env
                 .REDIS_PORT,
-            ),
+            ) || 6379,
 
           username:
             process.env
               .REDIS_USERNAME ||
-            'default',
+            undefined,
 
           password:
             process.env
-              .REDIS_PASSWORD,
+              .REDIS_PASSWORD ||
+            undefined,
+
+          maxRetriesPerRequest:
+            3,
+
+          lazyConnect:
+            true,
+
+          enableReadyCheck:
+            false,
         });
     }
 
@@ -89,7 +111,18 @@ export class RedisService {
   async set(
     key: string,
     value: string,
+    ttl?: number,
   ) {
+
+    if (ttl) {
+
+      return this.redis.set(
+        key,
+        value,
+        'EX',
+        ttl,
+      );
+    }
 
     return this.redis.set(
       key,
@@ -104,5 +137,19 @@ export class RedisService {
     return this.redis.get(
       key,
     );
+  }
+
+  async del(
+    key: string,
+  ) {
+
+    return this.redis.del(
+      key,
+    );
+  }
+
+  async disconnect() {
+
+    await this.redis.quit();
   }
 }

@@ -1,80 +1,82 @@
 import {
- Injectable,
- Inject,
- UnauthorizedException,
+  Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 
-import { PassportStrategy }
-from '@nestjs/passport';
+import {
+  PassportStrategy,
+} from '@nestjs/passport';
 
 import {
- ExtractJwt,
- Strategy,
+  ExtractJwt,
+  Strategy,
 } from 'passport-jwt';
 
-import { RedisService }
-from '../../redis/redis.service';
+import {
+  RedisService,
+} from '../../redis/redis.service';
 
 @Injectable()
 export class JwtStrategy
- extends PassportStrategy(Strategy) {
+  extends PassportStrategy(
+    Strategy,
+  ) {
 
- constructor(
+  constructor(
+    private redisService:
+      RedisService,
+  ) {
 
- private redisService:
- RedisService,
-) {
+    super({
 
- super({
-   jwtFromRequest:
-     ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest:
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
 
-   ignoreExpiration: false,
+      ignoreExpiration:
+        false,
 
-   secretOrKey:
-     process.env.JWT_SECRET,
+      secretOrKey:
+        process.env
+          .JWT_SECRET,
 
-   passReqToCallback:
-     true,
- });
-}
+      passReqToCallback:
+        true,
+    });
+  }
 
- async validate(
- req: any,
- payload: any,
-) {
+  async validate(
+    req: any,
+    payload: any,
+  ) {
 
- const token =
- req.headers.authorization
- ?.replace(
-   'Bearer ',
-   '',
- );
+    const token =
+      req.headers.authorization
+        ?.replace(
+          'Bearer ',
+          '',
+        );
 
- console.log(
-   'JWT VALIDATE CALLED',
- );
+    const isBlacklisted =
+      await this.redisService.get(
+        `blacklist-${token}`,
+      );
 
- const isBlacklisted =
- await this.redisService.get(
-   `blacklist-${token}`,
- );
+    if (
+      isBlacklisted
+    ) {
 
- console.log(
-   'BLACKLIST RESULT:',
-   isBlacklisted,
- );
+      throw new UnauthorizedException(
+        'Token expired. Please login again',
+      );
+    }
 
- if (isBlacklisted) {
+    return {
 
-   throw new UnauthorizedException(
-     'Token expired. Please login again',
-   );
- }
+      id:
+        payload.id,
 
- return {
-   id: payload.id,
-   email: payload.email,
- };
-}
+      email:
+        payload.email,
+    };
+  }
 }
