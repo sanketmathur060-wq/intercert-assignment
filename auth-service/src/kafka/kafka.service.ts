@@ -46,7 +46,12 @@ export class KafkaService
     const isRailway =
       !!username &&
       !!password;
-
+    console.log({
+      broker,
+      username,
+      passwordLength:
+        password?.length,
+    });
     const kafka =
       new Kafka({
 
