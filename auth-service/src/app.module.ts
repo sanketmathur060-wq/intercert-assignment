@@ -1,5 +1,6 @@
-import { Module }
-  from '@nestjs/common';
+import {
+  Module,
+} from '@nestjs/common';
 
 import {
   ConfigModule,
@@ -18,6 +19,10 @@ import {
 import {
   CacheModule,
 } from '@nestjs/cache-manager';
+
+import {
+  redisStore,
+} from 'cache-manager-ioredis-yet';
 
 import {
   JwtModule,
@@ -162,11 +167,70 @@ import {
           },
       }),
 
-    // CACHE MODULE
-    CacheModule.register({
-      isGlobal:
-        true,
-    }),
+    // REDIS CACHE
+    CacheModule
+      .registerAsync({
+
+        isGlobal:
+          true,
+
+        inject: [
+          ConfigService,
+        ],
+
+        useFactory:
+          async (
+            config:
+              ConfigService,
+          ) => {
+
+            const redisConfig:
+              any = {
+
+              host:
+                config.get<string>(
+                  'REDIS_HOST',
+                ),
+
+              port:
+                Number(
+                  config.get(
+                    'REDIS_PORT',
+                  ),
+                ),
+            };
+
+            // Railway Redis auth
+            if (
+              config.get(
+                'REDIS_PASSWORD',
+              )
+            ) {
+
+              redisConfig.username =
+                config.get<string>(
+                  'REDIS_USERNAME',
+                ) ||
+                'default';
+
+              redisConfig.password =
+                config.get<string>(
+                  'REDIS_PASSWORD',
+                );
+            }
+
+            return {
+
+              store:
+                await redisStore(
+                  redisConfig,
+                ),
+
+              ttl:
+                120,
+            };
+          },
+      }),
 
     // KAFKA
     ClientsModule
@@ -190,19 +254,39 @@ import {
                   'KAFKA_BROKER',
                 );
 
-              // Railway
+              const kafkaClient:
+                any = {
+
+                brokers: [
+                  broker!,
+                ],
+              };
+
+              // Railway Kafka auth
               if (
-                !broker
+                config.get(
+                  'KAFKA_USERNAME',
+                )
               ) {
 
-                console.log(
-                  'Kafka disabled',
-                );
+                kafkaClient.ssl =
+                  false;
 
-                return {
-                  transport:
-                    Transport.TCP,
-                };
+                kafkaClient.sasl =
+                  {
+                    mechanism:
+                      'plain',
+
+                    username:
+                      config.get<string>(
+                        'KAFKA_USERNAME',
+                      )!,
+
+                    password:
+                      config.get<string>(
+                        'KAFKA_PASSWORD',
+                      )!,
+                  };
               }
 
               console.log(
@@ -216,11 +300,9 @@ import {
                   Transport.KAFKA,
 
                 options: {
-                  client: {
-                    brokers: [
-                      broker,
-                    ],
-                  },
+
+                  client:
+                    kafkaClient,
 
                   consumer: {
                     groupId:
@@ -247,6 +329,7 @@ import {
 
     JwtModule
       .registerAsync({
+
         inject: [
           ConfigService,
         ],
