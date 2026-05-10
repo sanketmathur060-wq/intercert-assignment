@@ -57,14 +57,20 @@ import {
   imports: [
 
     ConfigModule.forRoot({
-      envFilePath:
-        process.env
+  envFilePath:
+    process.env.NODE_ENV ===
+    'production'
+      ? undefined
+      : process.env
           .ENV_FILE ||
         '.env.dev',
 
-      isGlobal:
-        true,
-    }),
+  isGlobal: true,
+
+  ignoreEnvFile:
+    process.env.NODE_ENV ===
+    'production',
+}),
 
     // DATABASE
     TypeOrmModule
