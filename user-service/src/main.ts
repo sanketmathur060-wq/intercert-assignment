@@ -16,7 +16,7 @@ import {
 } from './app.module';
 
 async function
-bootstrap() {
+  bootstrap() {
 
   const app =
     await NestFactory.create(
@@ -56,6 +56,35 @@ bootstrap() {
     ) || 3001;
 
   // KAFKA CONSUMER
+  const kafkaBroker =
+    config.get<string>(
+      'KAFKA_BROKER',
+    ) || 'kafka-ms:9092';
+
+  const kafkaUsername =
+    config.get<string>(
+      'KAFKA_USERNAME',
+    );
+
+  const kafkaPassword =
+    config.get<string>(
+      'KAFKA_PASSWORD',
+    );
+
+  const usesSasl =
+    !!kafkaUsername &&
+    !!kafkaPassword;
+
+  console.log(
+    'Kafka Broker:',
+    kafkaBroker,
+  );
+
+  console.log(
+    'Using SASL:',
+    usesSasl,
+  );
+
   app.connectMicroservice
     <MicroserviceOptions>({
       transport:
@@ -69,10 +98,30 @@ bootstrap() {
             'user-service',
 
           brokers: [
-            config.get<string>(
-              'KAFKA_BROKER',
-            )!,
+            kafkaBroker,
           ],
+
+          ssl: false,
+
+          sasl: usesSasl
+            ? {
+              mechanism:
+                'plain' as const,
+
+              username:
+                kafkaUsername!,
+
+              password:
+                kafkaPassword!,
+            }
+            : undefined,
+
+          retry: {
+            initialRetryTime:
+              1000,
+
+            retries: 8,
+          },
         },
 
         consumer: {
