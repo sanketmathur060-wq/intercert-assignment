@@ -190,17 +190,18 @@ import {
               host:
                 config.get<string>(
                   'REDIS_HOST',
-                ),
+                ) ||
+                'redis-ms',
 
               port:
                 Number(
                   config.get(
                     'REDIS_PORT',
-                  ),
+                  ) || 6379,
                 ),
             };
 
-            // Railway Redis auth
+            // Railway Redis Auth
             if (
               config.get(
                 'REDIS_PASSWORD',
@@ -218,6 +219,11 @@ import {
                   'REDIS_PASSWORD',
                 );
             }
+
+            console.log(
+              'REDIS HOST:',
+              redisConfig.host,
+            );
 
             return {
 
@@ -258,14 +264,18 @@ import {
                 any = {
 
                 brokers: [
-                  broker!,
+                  broker ||
+                  'kafka-ms:9092',
                 ],
               };
 
-              // Railway Kafka auth
+              // Railway Kafka Auth
               if (
                 config.get(
                   'KAFKA_USERNAME',
+                ) &&
+                config.get(
+                  'KAFKA_PASSWORD',
                 )
               ) {
 
@@ -291,7 +301,8 @@ import {
 
               console.log(
                 'Kafka Broker:',
-                broker,
+                kafkaClient
+                  .brokers[0],
               );
 
               return {
