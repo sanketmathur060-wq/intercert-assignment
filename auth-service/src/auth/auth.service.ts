@@ -16,7 +16,7 @@ import {
 } from 'typeorm';
 
 import * as bcrypt
-from 'bcrypt';
+  from 'bcrypt';
 
 import {
   JwtService,
@@ -36,7 +36,7 @@ import {
 
 @Injectable()
 export class AuthService
-implements OnModuleInit {
+  implements OnModuleInit {
 
   constructor(
 
@@ -56,7 +56,7 @@ implements OnModuleInit {
     )
     private kafkaClient?:
       ClientKafka,
-  ) {}
+  ) { }
 
   async onModuleInit() {
 
@@ -76,7 +76,7 @@ implements OnModuleInit {
         );
 
       } catch (
-        error
+      error
       ) {
 
         console.log(
@@ -135,25 +135,23 @@ implements OnModuleInit {
         ? savedUsers[0]
         : savedUsers;
 
-    // Safe Kafka emit
-    this.kafkaClient
-      ?.emit(
-        'user-created',
-
-        JSON.stringify({
-          id:
-            savedUser.id,
-
-          name:
-            savedUser.name,
-
-          email:
-            savedUser.email,
-
-          phone:
-            savedUser.phone,
+    // Direct HTTP call replacing Kafka
+    const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:3001';
+    try {
+      fetch(`${userServiceUrl}/user/internal/profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: savedUser.id,
+          name: savedUser.name,
+          email: savedUser.email,
+          phone: savedUser.phone,
         }),
-      );
+      }).catch(e => console.log('Fetch error:', e.message));
+      console.log('Requested profile creation via HTTP');
+    } catch (e) {
+      console.log('Failed to create profile via internal API:', e);
+    }
 
     return {
       message:

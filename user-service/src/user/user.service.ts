@@ -1,92 +1,102 @@
 import {
- Injectable,
- NotFoundException,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 
 import { InjectRepository }
-from '@nestjs/typeorm';
+  from '@nestjs/typeorm';
 
 import { Repository }
-from 'typeorm';
+  from 'typeorm';
 
 import { Profile }
-from './entities/profile.entity';
+  from './entities/profile.entity';
 
 @Injectable()
 export class UserService {
 
- constructor(
+  constructor(
 
-   @InjectRepository(Profile)
-   private profileRepo:
-     Repository<Profile>,
- ) {}
+    @InjectRepository(Profile)
+    private profileRepo:
+      Repository<Profile>,
+  ) { }
 
- async getProfile(user: any) {
+  async getProfile(user: any) {
 
-   const profile =
-     await this.profileRepo.findOne({
-       where: {
-         userId: user.id,
-       },
-     });
+    const profile =
+      await this.profileRepo.findOne({
+        where: {
+          userId: user.id,
+        },
+      });
 
-   if (!profile) {
-     throw new NotFoundException(
-       'Profile not found',
-     );
-   }
+    if (!profile) {
+      throw new NotFoundException(
+        'Profile not found',
+      );
+    }
 
-   return profile;
- }
+    return profile;
+  }
 
- async updateProfile(
-   user: any,
-   dto: any,
- ) {
+  async updateProfile(
+    user: any,
+    dto: any,
+  ) {
 
-   const profile =
-     await this.profileRepo.findOne({
-       where: {
-         userId: user.id,
-       },
-     });
+    const profile =
+      await this.profileRepo.findOne({
+        where: {
+          userId: user.id,
+        },
+      });
 
-   if (!profile) {
-     throw new NotFoundException(
-       'Profile not found',
-     );
-   }
+    if (!profile) {
+      throw new NotFoundException(
+        'Profile not found',
+      );
+    }
 
-   Object.assign(profile, dto);
+    Object.assign(profile, dto);
 
-   return this.profileRepo.save(
-     profile,
-   );
- }
-
- async uploadPhoto(
-   user: any,
-   filename: string,
- ) {
-
-   const profile =
-     await this.profileRepo.findOne({
-       where: {
-         userId: user.id,
-       },
-     });
-
-  if (!profile) {
-    throw new NotFoundException(
-      'Profile not found',
+    return this.profileRepo.save(
+      profile,
     );
   }
 
-  profile.photo = filename;
+  async uploadPhoto(
+    user: any,
+    filename: string,
+  ) {
 
-   return this.profileRepo.save(
-     profile,
-   );
- }
+    const profile =
+      await this.profileRepo.findOne({
+        where: {
+          userId: user.id,
+        },
+      });
+
+    if (!profile) {
+      throw new NotFoundException(
+        'Profile not found',
+      );
+    }
+
+    profile.photo = filename;
+
+    return this.profileRepo.save(
+      profile,
+    );
+  }
+
+  async createProfileInternal(payload: any) {
+    const profile = this.profileRepo.create({
+      userId: payload.id,
+      name: payload.name,
+      email: payload.email,
+      phone: payload.phone
+    });
+    return this.profileRepo.save(profile);
+  }
 }

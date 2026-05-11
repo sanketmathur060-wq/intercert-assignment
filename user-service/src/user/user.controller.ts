@@ -164,4 +164,10 @@ export class UserController {
         file.filename,
       );
   }
+
+  // INTERNAL: CREATE PROFILE (Bypasses Kafka)
+  @Post('internal/profile')
+  createProfileInternal(@Body() dto: any) {
+    return this.userService.createProfileInternal(dto);
+  }
 }

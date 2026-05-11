@@ -15,7 +15,7 @@ import {
 } from './app.module';
 
 async function
-bootstrap() {
+  bootstrap() {
 
   const app =
     await NestFactory
@@ -54,7 +54,7 @@ bootstrap() {
   app.enableCors({
 
     origin:
-      '*',
+      true,
 
     credentials:
       true,
