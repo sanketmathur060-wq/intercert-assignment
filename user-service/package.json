@@ -12,6 +12,8 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
+    "railway:test": "npm run setup:test && npm run start:prod",
+    "railway:live": "npm run setup:live && npm run start:prod",
     "migration:generate": "sh -c 'DOTENV_CONFIG_PATH=${ENV_FILE:-.env.dev} node -r dotenv/config ./node_modules/typeorm/cli.js migration:generate src/migrations/Init -d src/data-source.ts'",
     "migration:run": "npm run build && sh -c 'DOTENV_CONFIG_PATH=${ENV_FILE:-.env.dev} node -r dotenv/config ./node_modules/typeorm/cli.js migration:run -d dist/data-source.js'",
     "setup:dev": "node scripts/setup-db.js dev && NODE_ENV=dev dotenv -e .env.dev -- typeorm-ts-node-commonjs migration:run -d src/data-source.ts",

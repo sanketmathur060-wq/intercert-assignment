@@ -12,6 +12,8 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
+    "railway:test": "npm run setup:test && npm run start:prod",
+    "railway:live": "npm run setup:live && npm run start:prod",
     "setup:dev": "node scripts/setup-db.js dev && NODE_ENV=dev dotenv -e .env.dev -- typeorm-ts-node-commonjs migration:run -d src/data-source.ts",
     "setup:test": "node scripts/setup-db.js test && NODE_ENV=test dotenv -e .env.test -- typeorm-ts-node-commonjs migration:run -d src/data-source.ts && node scripts/seed-test-users.js",
     "setup:live": "node scripts/setup-db.js live && NODE_ENV=live dotenv -e .env.live -- typeorm-ts-node-commonjs migration:run -d src/data-source.ts",
