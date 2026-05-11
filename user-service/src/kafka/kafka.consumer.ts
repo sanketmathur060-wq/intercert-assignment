@@ -11,6 +11,7 @@ import {
 import {
     Kafka,
     Consumer,
+    Admin,
 } from 'kafkajs';
 
 import {
@@ -32,9 +33,6 @@ const TOPICS = [
     'login-events',
 ];
 
-const RETRY_DELAY_MS = 10_000;
-const MAX_RETRIES = 10;
-
 @Injectable()
 export class KafkaConsumerService
     implements
@@ -42,7 +40,7 @@ export class KafkaConsumerService
     OnModuleDestroy {
 
     private consumer: Consumer;
-    private destroyed = false;
+    private admin: Admin;
 
     constructor(
         private config: ConfigService,
@@ -56,34 +54,28 @@ export class KafkaConsumerService
             'kafka-ms:9092';
 
         const username =
-            this.config.get<string>('KAFKA_USERNAME') || '';
+            this.config.get<string>('KAFKA_USERNAME');
 
         const password =
-            this.config.get<string>('KAFKA_PASSWORD') || '';
+            this.config.get<string>('KAFKA_PASSWORD');
 
-        // Enable SASL whenever a password is provided
-        // (Railway resolves KAFKA_USERNAME to '', but SASL still works with empty user)
-        const useSasl = password.length > 0;
+        const isRailway =
+            !!username && !!password;
 
         console.log({
             broker,
             username,
-            passwordLength: password.length,
+            passwordLength: password?.length,
         });
-        console.log('Kafka Broker:', broker);
-        console.log('Using SASL:', useSasl);
 
         const kafka = new Kafka({
             clientId: 'user-service',
             brokers: [broker],
             ssl: false,
-            sasl: useSasl
+            sasl: isRailway
                 ? { mechanism: 'plain', username, password }
                 : undefined,
-            retry: {
-                initialRetryTime: 300,
-                retries: 5,
-            },
+            retry: { retries: 8 },
         });
 
         this.consumer = kafka.consumer({
@@ -92,20 +84,49 @@ export class KafkaConsumerService
             heartbeatInterval: 3000,
             rebalanceTimeout: 60000,
         });
+
+        this.admin = kafka.admin();
+
+        console.log('Kafka Broker:', broker);
+        console.log('Using Railway Kafka:', isRailway);
     }
 
     async onModuleInit() {
-        // Run connection in background — don't block app startup
-        this.connectWithRetry();
-    }
-
-    private async connectWithRetry(attempt = 0) {
-
-        if (this.destroyed) return;
 
         try {
 
+            // Ensure topics exist before subscribing
+            await this.admin.connect();
+
+            const existingTopics =
+                await this.admin.listTopics();
+
+            const missing = TOPICS.filter(
+                (t) => !existingTopics.includes(t),
+            );
+
+            if (missing.length > 0) {
+
+                console.log(
+                    'Creating Kafka topics:',
+                    missing,
+                );
+
+                await this.admin.createTopics({
+                    waitForLeaders: true,
+                    topics: missing.map((topic) => ({
+                        topic,
+                        numPartitions: 1,
+                        replicationFactor: 1,
+                    })),
+                });
+            }
+
+            await this.admin.disconnect();
+
+            // Connect consumer and subscribe
             await this.consumer.connect();
+
             console.log('Kafka Consumer Connected');
 
             await this.consumer.subscribe({
@@ -115,13 +136,19 @@ export class KafkaConsumerService
 
             await this.consumer.run({
 
-                eachMessage: async ({ topic, message }) => {
+                eachMessage: async ({
+                    topic,
+                    message,
+                }) => {
 
-                    const value = message.value?.toString();
+                    const value =
+                        message.value?.toString();
+
                     if (!value) return;
 
                     const data = JSON.parse(value);
 
+                    // LOGIN EVENTS
                     if (topic === 'login-events') {
 
                         console.log('LOGIN EVENT:', data);
@@ -132,6 +159,7 @@ export class KafkaConsumerService
                         );
                     }
 
+                    // USER CREATED
                     if (topic === 'user-created') {
 
                         console.log('USER CREATED EVENT:', data);
@@ -148,14 +176,16 @@ export class KafkaConsumerService
 
                         if (existingProfile) return;
 
-                        const profile = this.profileRepo.create({
-                            userId: user.id,
-                            name: user.name,
-                            email: user.email,
-                            phone: user.phone,
-                        });
+                        const profile =
+                            this.profileRepo.create({
+                                userId: user.id,
+                                name: user.name,
+                                email: user.email,
+                                phone: user.phone,
+                            });
 
                         await this.profileRepo.save(profile);
+
                         console.log('PROFILE CREATED');
                     }
                 },
@@ -164,32 +194,14 @@ export class KafkaConsumerService
         } catch (error) {
 
             console.error(
-                `Kafka Consumer Error (attempt ${attempt + 1}):`,
+                'Kafka Consumer Error:',
                 error.message,
             );
-
-            if (
-                !this.destroyed &&
-                attempt < MAX_RETRIES
-            ) {
-                console.log(
-                    `Retrying Kafka connection in ${RETRY_DELAY_MS / 1000}s...`,
-                );
-
-                setTimeout(
-                    () => this.connectWithRetry(attempt + 1),
-                    RETRY_DELAY_MS,
-                );
-            } else {
-                console.error(
-                    'Kafka Consumer gave up after max retries.',
-                );
-            }
         }
     }
 
     async onModuleDestroy() {
-        this.destroyed = true;
+
         await this.consumer.disconnect();
     }
 }
