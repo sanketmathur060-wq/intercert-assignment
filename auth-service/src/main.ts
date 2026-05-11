@@ -52,8 +52,7 @@ async function
 
   // CORS
   app.enableCors({
-    origin: true, 
-    credentials: true, 
+    origin: '*',
   });
 
   await app.listen(
