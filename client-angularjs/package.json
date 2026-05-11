@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "prestart": "node generate-env.js",
     "start": "http-server -p 8080 -c-1"
   },
   "keywords": [],
@@ -17,6 +18,7 @@
     "angular-route": "^1.8.3",
     "angular-toastr": "^2.1.1",
     "bootstrap": "^5.3.8",
+    "dotenv": "^16.4.5",
     "http-server": "^14.1.1"
   }
 }

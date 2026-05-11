@@ -155,6 +155,31 @@ services:
     volumes:
       - user_uploads:/app/uploads
 
+  client-ms:
+    build:
+      context: ./client-angularjs
+
+    container_name:
+      client-ms
+
+    depends_on:
+      auth-service:
+        condition:
+          service_started
+      user-service:
+        condition:
+          service_started
+
+    env_file:
+      - ./client-angularjs/.env.${ENV:-dev}
+
+    environment:
+      ENV_FILE:
+        .env.${ENV:-dev}
+
+    ports:
+      - "8080:8080"
+
 volumes:
   postgres_ms_data:
 
