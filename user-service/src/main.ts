@@ -18,22 +18,8 @@ async function bootstrap() {
     );
 
   app.enableCors({
-    origin: true,
-
-    credentials: true,
-
-    methods: [
-      'GET',
-      'POST',
-      'PUT',
-      'DELETE',
-      'OPTIONS',
-    ],
-
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-    ],
+    origin: true, 
+    credentials: true,  
   });
 
   const config =

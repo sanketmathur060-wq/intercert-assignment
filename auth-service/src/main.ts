@@ -52,26 +52,8 @@ async function
 
   // CORS
   app.enableCors({
-
-    origin:
-      true,
-
-    credentials:
-      true,
-
-    methods: [
-      'GET',
-      'POST',
-      'PUT',
-      'PATCH',
-      'DELETE',
-      'OPTIONS',
-    ],
-
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-    ],
+    origin: true, 
+    credentials: true, 
   });
 
   await app.listen(
